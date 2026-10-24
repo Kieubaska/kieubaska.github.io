@@ -1,0 +1,1130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Text Adventure Engine</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        /* CSS Reset & Variables */
+        :root {
+            --bg-amoled: #000000;
+            --bg-panel: #111111;
+            --bg-input: #171717;
+            --bg-hover: #262626;
+            --border-color: #262626;
+            
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --text-action: #888888;
+            
+            --color-stat1-text: #38bdf8; /* Sky Blue */
+            --color-stat1-bg: #0ea5e9;
+            --color-stat2-text: #fb923c; /* Orange */
+            --color-stat2-bg: #f97316;
+            
+            --btn-primary-bg: #e5e7eb;
+            --btn-primary-text: #000000;
+            --btn-primary-hover: #ffffff;
+            
+            --font-main: 'Inter', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-main);
+            background-color: var(--bg-amoled);
+            color: var(--text-main);
+            -webkit-tap-highlight-color: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        /* Utility Classes */
+        .hidden { display: none !important; }
+        .hidden-screen { display: none !important; }
+
+        /* App Container */
+        .app-container {
+            width: 100%;
+            max-width: 768px; /* max-w-3xl */
+            background-color: var(--bg-amoled);
+            display: flex;
+            flex-direction: column;
+            height: 100dvh;
+            border: none;
+        }
+
+        @media (min-width: 640px) {
+            .app-container {
+                height: 85vh;
+                max-height: 800px;
+                border: 1px solid var(--border-color);
+                border-radius: 1rem;
+                overflow: hidden;
+            }
+            body { padding: 1rem; }
+        }
+
+        /* Shared Header */
+        .screen-header {
+            background-color: var(--bg-panel);
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            flex-shrink: 0;
+        }
+        
+        .screen-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: 0.025em;
+        }
+        
+        .screen-subtitle {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+
+        /* Setup Screen Forms */
+        .setup-form {
+            padding: 1.5rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #d1d5db;
+            margin-bottom: 0.25rem;
+        }
+
+        .form-control {
+            width: 100%;
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 0.5rem;
+            border-radius: 0.25rem;
+            font-family: inherit;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+        .form-control:focus {
+            outline: none;
+            border-color: #6b7280;
+        }
+        
+        textarea.form-control {
+            resize: vertical;
+        }
+
+        /* Buttons */
+        .btn {
+            font-family: inherit;
+            font-weight: 700;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .btn-primary {
+            background-color: var(--btn-primary-bg);
+            color: var(--btn-primary-text);
+        }
+        .btn-primary:hover:not(:disabled) { background-color: var(--btn-primary-hover); }
+
+        .btn-small {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.75rem;
+            border-radius: 0.25rem;
+            background-color: var(--bg-input);
+            border: 1px solid var(--border-color);
+            color: #ffffff;
+            font-weight: 600;
+        }
+        .btn-small:hover { background-color: var(--bg-hover); }
+
+        .btn-text {
+            background: none;
+            border: none;
+            padding: 0;
+            font-size: 0.75rem;
+            cursor: pointer;
+            text-align: left;
+        }
+        .text-yellow { color: #eab308; }
+        .text-yellow:hover { color: #facc15; }
+        .text-red { color: #ef4444; }
+        .text-red:hover { color: #f87171; }
+
+        /* Game Header Details */
+        .game-header-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        @media (min-width: 640px) {
+            .game-header-layout {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+                gap: 1rem;
+            }
+        }
+        
+        .title-actions {
+            display: flex;
+            flex-direction: column;
+        }
+        .title-truncate {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 200px;
+        }
+        @media (min-width: 640px) {
+            .title-truncate { max-width: 250px; }
+        }
+        
+        .link-row {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 0.25rem;
+        }
+
+        .stats-controls-row {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            width: 100%;
+        }
+        @media (min-width: 640px) {
+            .stats-controls-row {
+                flex-direction: row;
+                align-items: center;
+                width: auto;
+                flex-grow: 1;
+                justify-content: flex-end;
+            }
+        }
+
+        /* Stats */
+        .stats-container {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            width: 100%;
+        }
+        @media (min-width: 640px) {
+            .stats-container { font-size: 0.875rem; width: auto; }
+        }
+        .stat-box {
+            display: flex;
+            flex-direction: column;
+            width: 50%;
+        }
+        @media (min-width: 640px) {
+            .stat-box { width: 6rem; }
+        }
+        
+        .stat-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.25rem;
+        }
+        .stat1-text { color: var(--color-stat1-text); }
+        .stat2-text { color: var(--color-stat2-text); }
+
+        .stat-track {
+            width: 100%;
+            background-color: #374151;
+            border-radius: 9999px;
+            height: 0.375rem;
+            border: 1px solid #4b5563;
+            overflow: hidden;
+        }
+        .stat-fill {
+            height: 100%;
+            border-radius: 9999px;
+            transition: width 0.3s ease;
+        }
+        .fill-stat1 { background-color: var(--color-stat1-bg); }
+        .fill-stat2 { background-color: var(--color-stat2-bg); }
+
+        /* Top Controls (Export/Import) */
+        .top-controls {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: flex-end;
+            width: 100%;
+        }
+        @media (min-width: 640px) {
+            .top-controls {
+                width: auto;
+                border-left: 1px solid var(--border-color);
+                padding-left: 1rem;
+            }
+        }
+
+        /* Story Container */
+        .story-container {
+            flex-grow: 1;
+            padding: 1rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            background-color: var(--bg-amoled);
+        }
+        @media (min-width: 640px) { .story-container { padding: 1.5rem; } }
+
+        .message {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+        .message.player {
+            margin-left: 3rem;
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border-color);
+        }
+        .message.story {
+            margin-right: 3rem;
+            background-color: var(--bg-amoled);
+            border: 1px solid var(--border-color);
+        }
+
+        .message-author {
+            font-size: 0.875rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            display: block;
+            margin-bottom: 0.5rem;
+        }
+        .message.player .message-author { color: #9ca3af; }
+        .message.story .message-author { color: #6b7280; }
+
+        .story-text {
+            white-space: pre-wrap;
+            line-height: 1.6;
+            color: var(--text-main) !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+        }
+        .story-text p, .story-text div, .story-text span:not(.action-text) {
+            color: var(--text-main) !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+        }
+
+        .action-text {
+            color: var(--text-action) !important;
+            font-style: italic !important;
+        }
+
+        /* Input Area */
+        .input-area {
+            background-color: var(--bg-panel);
+            padding: 0.75rem;
+            border-top: 1px solid var(--border-color);
+            flex-shrink: 0;
+        }
+        @media (min-width: 640px) { .input-area { padding: 1.5rem; } }
+
+        .action-toolbar {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        @media (min-width: 640px) { .action-toolbar { margin-bottom: 0.75rem; gap: 1rem; } }
+
+        .toolbar-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        @media (min-width: 640px) { .toolbar-btn { font-size: 0.875rem; } }
+        .toolbar-btn:hover:not(:disabled) {
+            color: #ffffff;
+            background-color: #374151;
+        }
+        .toolbar-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .toolbar-btn svg { width: 16px; height: 16px; }
+
+        .input-form {
+            display: flex;
+            gap: 0.5rem;
+        }
+        @media (min-width: 640px) { .input-form { gap: 0.75rem; } }
+
+        .chat-input {
+            flex-grow: 1;
+            background-color: var(--bg-input);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            font-family: inherit;
+            font-size: 0.875rem;
+        }
+        @media (min-width: 640px) { .chat-input { padding: 1rem; font-size: 1rem; } }
+        .chat-input:focus {
+            outline: none;
+            border-color: #9ca3af;
+        }
+
+        .send-btn {
+            padding: 0.75rem 1rem;
+            font-size: 0.875rem;
+        }
+        @media (min-width: 640px) { .send-btn { padding: 1rem 2rem; font-size: 1rem; } }
+
+        .loading-text {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            text-align: center;
+            margin-top: 0.5rem;
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @media (min-width: 640px) { .loading-text { font-size: 0.875rem; margin-top: 0.75rem; } }
+
+        /* Modal Overlay */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+        }
+        .modal-content {
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            max-width: 24rem;
+            width: 100%;
+            margin: 1rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+        }
+        .modal-message {
+            color: #e5e7eb;
+            font-size: 0.875rem;
+            margin-bottom: 1.5rem;
+            font-weight: 500;
+        }
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+        }
+        .btn-cancel {
+            background-color: #262626;
+            color: #ffffff;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 0.25rem;
+            font-size: 0.875rem;
+            cursor: pointer;
+        }
+        .btn-cancel:hover { background-color: #404040; }
+        
+        .btn-confirm {
+            background-color: #dc2626;
+            color: #ffffff;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 0.25rem;
+            font-size: 0.875rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .btn-confirm:hover { background-color: #ef4444; }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Scrollbars */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-panel); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #4b5563; }
+
+    </style>
+</head>
+<body>
+
+    <!-- Screen 1: Setup Screen -->
+    <div id="setup-screen" class="app-container hidden-screen">
+        <div class="screen-header">
+            <h1 class="screen-title">Create Custom Adventure</h1>
+            <p class="screen-subtitle">Define the parameters of your AI text adventure.</p>
+        </div>
+        <form id="setup-form" class="setup-form">
+            <div class="form-group">
+                <label>Genre</label>
+                <input type="text" id="cfg-genre" required placeholder="e.g., Cyberpunk, Fantasy, Psychological Horror" class="form-control">
+            </div>
+            <div class="form-group">
+                <label>Subgenres (Optional)</label>
+                <input type="text" id="cfg-subgenres" placeholder="e.g., Noir, Slice of Life, Post-Apocalyptic" class="form-control">
+            </div>
+            <div class="form-group">
+                <label>Your Character</label>
+                <input type="text" id="cfg-player-character" required placeholder="e.g., Alex, a shy barista with a secret talent" class="form-control">
+            </div>
+            <div class="form-group">
+                <label>Secondary Character(s)</label>
+                <input type="text" id="cfg-secondary-characters" required placeholder="e.g., Morgan, an aloof tech CEO, and Sam, a rogue hacker" class="form-control">
+            </div>
+            <div class="form-group">
+                <label>Setting & Situation</label>
+                <textarea id="cfg-setting" required rows="4" placeholder="e.g. A rainy evening in a cozy cyberpunk cafe. Morgan's umbrella breaks outside." class="form-control"></textarea>
+            </div>
+            <button type="submit" id="start-game-btn" class="btn btn-primary" style="margin-top: 0.5rem;">Start Custom Game</button>
+            <p id="setup-loading" class="loading-text hidden">Connecting to reality...</p>
+        </form>
+    </div>
+
+    <!-- Screen 2: Game Screen -->
+    <div id="game-screen" class="app-container hidden-screen">
+        
+        <!-- Header / Stat Tracker -->
+        <div class="screen-header">
+            <div class="game-header-layout">
+                <div class="title-actions">
+                    <h1 id="ui-game-title" class="screen-title title-truncate">Title</h1>
+                    <div class="link-row">
+                        <button id="restart-game-btn" class="btn-text text-yellow">Restart</button>
+                        <button id="new-game-btn" class="btn-text text-red">New Game</button>
+                    </div>
+                </div>
+                
+                <div class="stats-controls-row">
+                    <div class="stats-container">
+                        <!-- Stat 1 Bar -->
+                        <div class="stat-box">
+                            <div class="stat-labels stat1-text">
+                                <span id="stat-label-1">Stat 1</span>
+                                <span id="stat-value-1">0</span>
+                            </div>
+                            <div class="stat-track">
+                                <div id="stat-bar-1" class="stat-fill fill-stat1" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        <!-- Stat 2 Bar -->
+                        <div class="stat-box">
+                            <div class="stat-labels stat2-text">
+                                <span id="stat-label-2">Stat 2</span>
+                                <span id="stat-value-2">0</span>
+                            </div>
+                            <div class="stat-track">
+                                <div id="stat-bar-2" class="stat-fill fill-stat2" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Controls -->
+                    <div class="top-controls">
+                        <button id="export-btn" class="btn-small">Export</button>
+                        <button id="import-btn" class="btn-small">Import</button>
+                        <input type="file" id="import-file" accept=".json" class="hidden">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Story Display Area -->
+        <div class="story-container" id="story-container">
+            <!-- Messages populated by JS -->
+        </div>
+
+        <!-- Input Area -->
+        <div class="input-area">
+            <!-- Action Toolbar -->
+            <div class="action-toolbar">
+                <button id="undo-btn" class="toolbar-btn" disabled>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                    </svg>
+                    Undo
+                </button>
+                <button id="regen-btn" class="toolbar-btn" disabled>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Regenerate
+                </button>
+            </div>
+            <form id="input-form" class="input-form">
+                <input type="text" id="player-input" autocomplete="off" placeholder="What do you do or say?" class="chat-input">
+                <button type="submit" id="send-btn" class="btn btn-primary send-btn">Act</button>
+            </form>
+            <div id="loading-indicator" class="loading-text hidden">The story is unfolding...</div>
+        </div>
+
+    </div>
+
+    <!-- Custom Modal Overlay -->
+    <div id="custom-modal" class="modal-overlay hidden-screen">
+        <div class="modal-content">
+            <p id="custom-modal-message" class="modal-message"></p>
+            <div class="modal-actions">
+                <button id="custom-modal-cancel" class="btn-cancel">Cancel</button>
+                <button id="custom-modal-confirm" class="btn-confirm">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Firebase Initialization
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+        const authToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        let app, auth, db, userId;
+
+        if (firebaseConfig) {
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+        }
+
+        // Game State & History
+        let chatHistory = [];
+        let stat1 = 50;
+        let stat2 = 50;
+        let stat1Name = "Stat 1";
+        let stat2Name = "Stat 2";
+        let gameConfig = null;
+
+        // DOM Elements - Screens
+        const setupScreen = document.getElementById('setup-screen');
+        const gameScreen = document.getElementById('game-screen');
+        
+        // DOM Elements - Setup
+        const setupForm = document.getElementById('setup-form');
+        const setupLoading = document.getElementById('setup-loading');
+        
+        // DOM Elements - Game UI
+        const storyContainerEl = document.getElementById('story-container');
+        const inputForm = document.getElementById('input-form');
+        const playerInput = document.getElementById('player-input');
+        const sendBtn = document.getElementById('send-btn');
+        const undoBtn = document.getElementById('undo-btn');
+        const regenBtn = document.getElementById('regen-btn');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const exportBtn = document.getElementById('export-btn');
+        const importBtn = document.getElementById('import-btn');
+        const importFile = document.getElementById('import-file');
+        const uiGameTitle = document.getElementById('ui-game-title');
+        const restartGameBtn = document.getElementById('restart-game-btn');
+        const newGameBtn = document.getElementById('new-game-btn');
+
+        // Modal Logic
+        const customModal = document.getElementById('custom-modal');
+        const customModalMessage = document.getElementById('custom-modal-message');
+        const customModalCancel = document.getElementById('custom-modal-cancel');
+        const customModalConfirm = document.getElementById('custom-modal-confirm');
+        let modalConfirmCallback = null;
+
+        function showModal(message, callback, isAlert = false) {
+            customModalMessage.innerText = message;
+            modalConfirmCallback = callback;
+            
+            if (isAlert) {
+                customModalCancel.classList.add('hidden-screen');
+                customModalConfirm.innerText = "OK";
+            } else {
+                customModalCancel.classList.remove('hidden-screen');
+                customModalConfirm.innerText = "Confirm";
+            }
+            
+            customModal.classList.remove('hidden-screen');
+        }
+
+        function hideModal() {
+            customModal.classList.add('hidden-screen');
+            modalConfirmCallback = null;
+        }
+
+        customModalCancel.addEventListener('click', hideModal);
+        customModalConfirm.addEventListener('click', () => {
+            if (modalConfirmCallback) modalConfirmCallback();
+            hideModal();
+        });
+
+        // Dynamically build the system prompt based on config
+        function generateSystemPrompt(config) {
+            return `You are the Game Master for an interactive ${config.genre} text adventure.
+Player Character: ${config.playerCharacter}
+Secondary Character(s): ${config.secondaryCharacters}
+Setting/Situation: ${config.setting}
+Subgenres: ${config.subgenres || 'None'}
+
+Rules:
+1. The player will type their actions or dialogue.
+2. You determine the immediate physical consequences, character reactions, and advance the scene slightly. Focus on the core themes, tropes, and atmosphere of the chosen genre: ${config.genre}.
+3. Keep the tone fitting for the scenario. Allow the player to succeed, fail, or alter the course of the story.
+4. Keep responses concise (1 to 3 short paragraphs).
+5. Format character speech strictly like this: "CharacterName: 'Text'".
+6. NEVER control the player's actions or speak for the player. Only describe the world and NPC reactions.
+7. IMPORTANT: Text wrapped in asterisks (e.g., *blushes and looks away*) indicates a physical action or inner thought performed by the player or an NPC. Process it accordingly.
+8. STATS: Based on the genre and subgenres, you must invent two appropriate personality stats for the player (e.g., Logic/Empathy, Sanity/Bravery). Track them on a 0-100 scale. At the very end of every response, you MUST append a hidden data block exactly in this format: ||STATS:{"stat1Name": "Name1", "stat1": X, "stat2Name": "Name2", "stat2": Y}|| where X and Y are the integer changes to the stats (e.g., 5, -2, 0).`;
+        }
+
+        // Helper to format text with dynamic character colors and actions
+        function formatText(text) {
+            // 1. Escape HTML first to prevent broken tags and injection errors
+            let formatted = text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;");
+                
+            // 2. Format *actions and thoughts* in darker gray italic
+            formatted = formatted.replace(/\*([^*]+)\*/g, '<span class="action-text">*$1*</span>');
+            
+            // 3. Convert newlines to breaks
+            formatted = formatted.replace(/\n/g, '<br>');
+            
+            return formatted;
+        }
+
+        function appendMessage(text, isPlayer = false) {
+            const div = document.createElement('div');
+            div.className = `message ${isPlayer ? 'player' : 'story'}`;
+            
+            if (isPlayer) {
+                div.innerHTML = `<span class="message-author">You</span><div class="story-text">${formatText(text)}</div>`;
+            } else {
+                div.innerHTML = `<span class="message-author">Story</span><div class="story-text">${formatText(text)}</div>`;
+            }
+            
+            storyContainerEl.appendChild(div);
+            setTimeout(() => {
+                storyContainerEl.scrollTop = storyContainerEl.scrollHeight;
+            }, 50);
+        }
+
+        function updateStatsUI() {
+            document.getElementById('stat-label-1').innerText = stat1Name;
+            document.getElementById('stat-label-2').innerText = stat2Name;
+            document.getElementById('stat-value-1').innerText = stat1;
+            document.getElementById('stat-value-2').innerText = stat2;
+            document.getElementById('stat-bar-1').style.width = `${stat1}%`;
+            document.getElementById('stat-bar-2').style.width = `${stat2}%`;
+        }
+
+        function switchScreen(screen) {
+            setupScreen.classList.add('hidden-screen');
+            gameScreen.classList.add('hidden-screen');
+            
+            if (screen === 'setup') {
+                setupScreen.classList.remove('hidden-screen');
+            } else if (screen === 'game') {
+                gameScreen.classList.remove('hidden-screen');
+                // Extract just the name if they provided a long description
+                const shortName = gameConfig.playerCharacter.split(',')[0].split(' ')[0] || "Your";
+                uiGameTitle.innerText = `${shortName}'s Adventure`;
+            }
+        }
+
+        async function handleTurn(userAction) {
+            appendMessage(userAction, true);
+            playerInput.value = '';
+            playerInput.disabled = true;
+            sendBtn.disabled = true;
+            undoBtn.disabled = true;
+            regenBtn.disabled = true;
+            loadingIndicator.classList.remove('hidden');
+
+            chatHistory.push({ role: "user", parts: [{ text: userAction }] });
+            const safeHistory = chatHistory.map(msg => ({ role: msg.role, parts: [...msg.parts] }));
+            const sysPrompt = generateSystemPrompt(gameConfig);
+
+            const payload = {
+                contents: safeHistory,
+                systemInstruction: { parts: [{ text: sysPrompt }] }
+            };
+
+            const apiKey = ""; 
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+            try {
+                let response;
+                let retries = 3;
+                let delay = 1000;
+                
+                while (retries > 0) {
+                    try {
+                        response = await fetch(apiUrl, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                        if (response.ok) break;
+                    } catch (err) {}
+                    retries--;
+                    await new Promise(res => setTimeout(res, delay));
+                    delay *= 2;
+                }
+
+                if (!response || !response.ok) throw new Error("Failed to fetch");
+
+                const result = await response.json();
+                
+                if (result.candidates && result.candidates.length > 0 && result.candidates[0].content) {
+                    let aiText = result.candidates[0].content.parts[0].text;
+                    
+                    const statsRegex = /\|\|STATS:({.*?})\|\|/;
+                    const match = aiText.match(statsRegex);
+                    if (match) {
+                        try {
+                            const statsChange = JSON.parse(match[1]);
+                            if (statsChange.stat1Name) stat1Name = statsChange.stat1Name;
+                            if (statsChange.stat2Name) stat2Name = statsChange.stat2Name;
+                            stat1 = Math.max(0, Math.min(100, stat1 + (statsChange.stat1 || 0)));
+                            stat2 = Math.max(0, Math.min(100, stat2 + (statsChange.stat2 || 0)));
+                            updateStatsUI();
+                            aiText = aiText.replace(statsRegex, '').trim();
+                        } catch (e) {
+                            console.error("Failed to parse stats block:", e);
+                        }
+                    }
+
+                    appendMessage(aiText, false);
+                    chatHistory.push({ role: "model", parts: [{ text: aiText }], stats: { stat1, stat2, stat1Name, stat2Name } });
+                    saveGame();
+                } else {
+                    appendMessage("The universe glitched. Nothing happened. (Try again)", false);
+                    chatHistory.pop();
+                }
+            } catch (e) {
+                appendMessage("The universe glitched. A rift in time occurred. (Network Error)", false);
+                chatHistory.pop();
+            } finally {
+                playerInput.disabled = false;
+                sendBtn.disabled = false;
+                updateButtonStates();
+                loadingIndicator.classList.add('hidden');
+                playerInput.focus();
+                storyContainerEl.scrollTop = storyContainerEl.scrollHeight;
+            }
+        }
+
+        setupForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            gameConfig = {
+                genre: document.getElementById('cfg-genre').value.trim(),
+                subgenres: document.getElementById('cfg-subgenres').value.trim(),
+                playerCharacter: document.getElementById('cfg-player-character').value.trim(),
+                secondaryCharacters: document.getElementById('cfg-secondary-characters').value.trim(),
+                setting: document.getElementById('cfg-setting').value.trim()
+            };
+
+            await startOrRestartScenario();
+        });
+
+        async function startOrRestartScenario() {
+            stat1 = 50;
+            stat2 = 50;
+            stat1Name = "Stat 1";
+            stat2Name = "Stat 2";
+            chatHistory = [];
+            storyContainerEl.innerHTML = '';
+            
+            updateStatsUI();
+            updateButtonStates();
+            switchScreen('game');
+            
+            // Overwrite the Firebase save immediately to clear previous state
+            await saveGame();
+            
+            // Initial setup call without showing user message visually
+            playerInput.disabled = true;
+            sendBtn.disabled = true;
+            loadingIndicator.innerText = "Generating starting scenario...";
+            loadingIndicator.classList.remove('hidden');
+
+            const initPrompt = `Start the game based on the scenario provided. Set the scene in detail, describe the setting, and introduce the secondary character(s). Plunge the player immediately into a situation that fits the ${gameConfig.genre} genre. Make it engaging and end with a clear situation I need to react to.`;
+            chatHistory.push({ role: "user", parts: [{ text: initPrompt }] });
+            
+            const sysPrompt = generateSystemPrompt(gameConfig);
+            const payload = {
+                contents: chatHistory,
+                systemInstruction: { parts: [{ text: sysPrompt }] }
+            };
+
+            const apiKey = ""; 
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                const result = await response.json();
+                if (result.candidates && result.candidates.length > 0 && result.candidates[0].content) {
+                    let aiText = result.candidates[0].content.parts[0].text;
+                    const statsRegex = /\|\|STATS:({.*?})\|\|/;
+                    const match = aiText.match(statsRegex);
+                    if (match) {
+                        try {
+                            const statsChange = JSON.parse(match[1]);
+                            if (statsChange.stat1Name) stat1Name = statsChange.stat1Name;
+                            if (statsChange.stat2Name) stat2Name = statsChange.stat2Name;
+                        } catch (e) {}
+                    }
+                    aiText = aiText.replace(statsRegex, '').trim();
+                    updateStatsUI();
+
+                    appendMessage(aiText, false);
+                    chatHistory.push({ role: "model", parts: [{ text: aiText }], stats: { stat1, stat2, stat1Name, stat2Name } });
+                    saveGame();
+                } else {
+                    throw new Error("Invalid response");
+                }
+            } catch (e) {
+                appendMessage("Failed to start game. Please refresh and try again.", false);
+            } finally {
+                playerInput.disabled = false;
+                sendBtn.disabled = false;
+                loadingIndicator.classList.add('hidden');
+                loadingIndicator.innerText = "The story is unfolding...";
+                playerInput.focus();
+            }
+        }
+
+        inputForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const val = playerInput.value.trim();
+            if(val) {
+                handleTurn(val);
+            }
+        });
+
+        function updateButtonStates() {
+            const canModify = chatHistory.length > 2; 
+            undoBtn.disabled = !canModify;
+            regenBtn.disabled = !canModify;
+        }
+
+        function restoreStatsFromLastTurn() {
+            const lastTurn = chatHistory[chatHistory.length - 1];
+            if (lastTurn && lastTurn.stats) {
+                stat1 = lastTurn.stats.stat1;
+                stat2 = lastTurn.stats.stat2;
+                stat1Name = lastTurn.stats.stat1Name || stat1Name;
+                stat2Name = lastTurn.stats.stat2Name || stat2Name;
+            } else {
+                stat1 = 50;
+                stat2 = 50;
+            }
+            updateStatsUI();
+        }
+
+        undoBtn.addEventListener('click', () => {
+            if (chatHistory.length <= 2) return;
+            chatHistory.pop(); 
+            chatHistory.pop(); 
+            restoreStatsFromLastTurn();
+            rebuildChatUI();
+            updateButtonStates();
+            saveGame();
+        });
+
+        regenBtn.addEventListener('click', () => {
+            if (chatHistory.length <= 2) return;
+            chatHistory.pop(); 
+            const lastUserTurn = chatHistory.pop(); 
+            restoreStatsFromLastTurn();
+            rebuildChatUI();
+            handleTurn(lastUserTurn.parts[0].text);
+        });
+
+        exportBtn.addEventListener('click', () => {
+            const saveData = { gameConfig, chatHistory, stat1, stat2, stat1Name, stat2Name };
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(saveData));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            
+            const safeName = (gameConfig.playerCharacter || "Game").split(',')[0].replace(/\s+/g, '_');
+            downloadAnchorNode.setAttribute("download", `${safeName}_adventure_save.json`);
+            
+            document.body.appendChild(downloadAnchorNode);
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+        });
+
+        importBtn.addEventListener('click', () => { importFile.click(); });
+
+        importFile.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async function(event) {
+                try {
+                    const loadedData = JSON.parse(event.target.result);
+                    if (loadedData.gameConfig && loadedData.chatHistory) {
+                        gameConfig = loadedData.gameConfig;
+                        chatHistory = loadedData.chatHistory;
+                        stat1 = loadedData.stat1 || 50;
+                        stat2 = loadedData.stat2 || 50;
+                        stat1Name = loadedData.stat1Name || "Stat 1";
+                        stat2Name = loadedData.stat2Name || "Stat 2";
+                        
+                        rebuildChatUI();
+                        updateStatsUI();
+                        updateButtonStates();
+                        switchScreen('game');
+                        saveGame(); 
+                    } else {
+                        throw new Error("Invalid format");
+                    }
+                } catch(error) {
+                    showModal("Error parsing save file. Ensure it is a valid custom text adventure save.", null, true);
+                }
+            };
+            reader.readAsText(file);
+            importFile.value = ''; 
+        });
+
+        newGameBtn.addEventListener('click', () => {
+            showModal("Are you sure you want to start a new game? Your current cloud save will be deleted.", async () => {
+                if (userId && db) {
+                    try {
+                        await deleteDoc(doc(db, 'artifacts', appId, 'users', userId, 'gameState', 'default'));
+                    } catch(e) { console.error("Failed to delete save", e); }
+                }
+                gameConfig = null;
+                chatHistory = [];
+                stat1 = 50;
+                stat2 = 50;
+                stat1Name = "Stat 1";
+                stat2Name = "Stat 2";
+                setupForm.reset(); 
+                switchScreen('setup');
+            });
+        });
+
+        restartGameBtn.addEventListener('click', () => {
+            showModal("Are you sure you want to restart this scenario? You will lose your current progress.", async () => {
+                await startOrRestartScenario();
+            });
+        });
+
+        function rebuildChatUI() {
+            storyContainerEl.innerHTML = '';
+            for(let i = 1; i < chatHistory.length; i++) {
+                const msg = chatHistory[i];
+                appendMessage(msg.parts[0].text, msg.role === 'user');
+            }
+        }
+
+        async function saveGame() {
+            if (!userId || !db || !gameConfig) return;
+            try {
+                const gameDoc = doc(db, 'artifacts', appId, 'users', userId, 'gameState', 'default');
+                await setDoc(gameDoc, { gameConfig, chatHistory, stat1, stat2, stat1Name, stat2Name });
+            } catch (e) {
+                console.error("Save failed:", e);
+            }
+        }
+
+        async function initApp() {
+            // Setup Auth first
+            if (auth) {
+                try {
+                    if (authToken) {
+                        await signInWithCustomToken(auth, authToken);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                    userId = auth.currentUser.uid;
+                } catch(e) {
+                    console.error("Auth failed:", e);
+                }
+            }
+
+            let loaded = false;
+            if (userId && db) {
+                try {
+                    const docSnap = await getDoc(doc(db, 'artifacts', appId, 'users', userId, 'gameState', 'default'));
+                    if (docSnap.exists()) {
+                        const data = docSnap.data();
+                        if (data.gameConfig && data.chatHistory && data.chatHistory.length > 0) {
+                            gameConfig = data.gameConfig;
+                            chatHistory = data.chatHistory;
+                            stat1 = data.stat1 || 50;
+                            stat2 = data.stat2 || 50;
+                            stat1Name = data.stat1Name || "Stat 1";
+                            stat2Name = data.stat2Name || "Stat 2";
+                            loaded = true;
+                            
+                            rebuildChatUI();
+                            updateStatsUI();
+                            updateButtonStates();
+                            switchScreen('game');
+                        }
+                    }
+                } catch(e) {
+                    console.error("Load failed:", e);
+                }
+            }
+
+            if (!loaded) {
+                switchScreen('setup');
+            }
+        }
+
+        initApp();
+    </script>
+</body>
+</html>
