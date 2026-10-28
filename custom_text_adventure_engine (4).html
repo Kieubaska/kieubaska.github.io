@@ -1,0 +1,1567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AI Text Adventure Engine</title>
+    <style>
+        :root {
+            --bg-black: #000000;
+            --bg-panel: #0a0a0a;
+            --bg-card: #121212;
+            --bg-input: #161616;
+            --border-color: #262626;
+            --text-main: #f5f5f5;
+            --text-muted: #888888;
+            --accent-blue: #3b82f6;
+            --accent-orange: #f97316;
+            --accent-red: #ef4444;
+            --accent-green: #22c55e;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-black);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            height: 100dvh;
+            overflow: hidden;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 720px;
+            height: 100dvh;
+            max-height: 900px;
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        @media (max-width: 720px) {
+            .app-container {
+                max-height: 100dvh;
+                border: none;
+                border-radius: 0;
+            }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Setup Screen */
+        .setup-screen {
+            padding: 24px;
+            overflow-y: auto;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .setup-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .setup-subtitle {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin-top: -8px;
+            line-height: 1.4;
+        }
+
+        .save-slots-container {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .save-slot {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--bg-input);
+            padding: 10px 14px;
+            border-radius: 6px;
+            border: 1px solid #333;
+        }
+
+        .save-slot-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .save-slot-title {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+        
+        .save-slot-desc {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .save-slot-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        @media (max-width: 500px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        label {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: #bbbbbb;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .opt-badge {
+            font-size: 0.68rem;
+            color: var(--text-muted);
+            font-weight: 400;
+            text-transform: none;
+            letter-spacing: 0;
+        }
+
+        input, textarea, select {
+            background-color: var(--bg-input);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            border-color: #555555;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 76px;
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 6px;
+            flex-wrap: wrap;
+        }
+
+        .btn-primary {
+            background-color: var(--text-main);
+            color: var(--bg-black);
+            border: none;
+            padding: 14px 20px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: opacity 0.2s;
+            flex: 2;
+        }
+
+        .btn-secondary {
+            background-color: #1c1c1c;
+            color: var(--text-main);
+            border: 1px solid #333333;
+            padding: 14px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            flex: 1;
+            white-space: nowrap;
+        }
+
+        .btn-secondary:hover {
+            background-color: #282828;
+        }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+        }
+
+        .btn-primary:disabled, .btn-secondary:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .btn-small {
+            background-color: var(--bg-input);
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-small:hover {
+            background-color: #222222;
+        }
+
+        .btn-small.danger {
+            color: var(--accent-red);
+            border-color: #4a1919;
+            background-color: #1a0505;
+        }
+
+        .btn-small.danger:hover {
+            background-color: #2a0808;
+        }
+
+        .badge-ai {
+            border-color: #3b82f655;
+            color: #93c5fd;
+        }
+
+        /* Header Layout - Matched to referenced image */
+        .game-header {
+            padding: 14px 18px;
+            border-bottom: 1px solid var(--border-color);
+            background-color: var(--bg-panel);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .header-top {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .header-left h2 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--text-main);
+            line-height: 1.2;
+        }
+
+        .header-sub {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .header-links {
+            display: flex;
+            gap: 12px;
+            margin-top: 8px;
+        }
+
+        .link-btn {
+            background: none;
+            border: none;
+            font-size: 0.85rem;
+            cursor: pointer;
+            padding: 0;
+            font-weight: 500;
+        }
+
+        .link-restart { color: #eab308; }
+        .link-menu { color: var(--accent-red); }
+
+        .header-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            width: 100%;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .stats-container {
+            display: flex;
+            gap: 20px; /* More space between stats */
+            align-items: center;
+            border-right: 1px solid var(--border-color);
+            padding-right: 16px;
+        }
+
+        .stat-box {
+            width: 120px;
+        }
+
+        .stat-top {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+            gap: 8px;
+        }
+
+        .stat-label {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex: 1;
+        }
+
+        .stat-value {
+            flex-shrink: 0;
+        }
+
+        .stat-1-color { color: var(--accent-blue); }
+        .stat-2-color { color: var(--accent-orange); }
+
+        .stat-bar-bg {
+            width: 100%;
+            height: 6px;
+            background-color: #262626;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .stat-bar-fill-1 {
+            height: 100%;
+            background-color: var(--accent-blue);
+            transition: width 0.3s ease;
+        }
+
+        .stat-bar-fill-2 {
+            height: 100%;
+            background-color: var(--accent-orange);
+            transition: width 0.3s ease;
+        }
+
+        .header-controls-right {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        /* Story Log */
+        .story-container {
+            flex: 1;
+            padding: 18px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            background-color: var(--bg-black);
+        }
+
+        .message-card {
+            padding: 14px 16px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            line-height: 1.55;
+            font-size: 0.95rem;
+            max-width: 92%;
+            word-wrap: break-word;
+            color: var(--text-main) !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+        }
+
+        .msg-ai {
+            background-color: var(--bg-panel);
+            align-self: flex-start;
+        }
+
+        .msg-user {
+            background-color: var(--bg-card);
+            align-self: flex-end;
+            border-color: #303030;
+        }
+
+        .msg-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+
+        .action-text {
+            font-style: italic;
+            color: #8c8c8c !important;
+        }
+
+        /* Input Footer */
+        .game-footer {
+            padding: 12px 18px 16px;
+            border-top: 1px solid var(--border-color);
+            background-color: var(--bg-panel);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .footer-controls {
+            display: flex;
+            gap: 14px;
+            width: 100%;
+            align-items: center;
+        }
+
+        .control-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 0.78rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .control-btn:hover:not(:disabled) {
+            color: var(--text-main);
+        }
+
+        .control-btn:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+        }
+
+        .input-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-row input {
+            flex: 1;
+        }
+
+        .input-row .btn-primary {
+            flex: 0 0 auto;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .modal-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            width: 100%;
+            max-width: 420px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .modal-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        .modal-desc {
+            font-size: 0.86rem;
+            color: #bbbbbb;
+            line-height: 1.45;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <!-- SETUP SCREEN -->
+    <div id="setupScreen" class="setup-screen">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px; flex-wrap:wrap; margin-bottom: -4px;">
+            <div>
+                <h1 id="uiSetupTitle" class="setup-title">Create Your Adventure</h1>
+                <p id="uiSetupSubtitle" class="setup-subtitle" style="margin-top: 6px;">
+                    Load a save, or fill in the details below to start anew!
+                </p>
+            </div>
+            <div style="display:flex; gap:6px; align-items:center;">
+                <button type="button" id="setupLangBtn" class="btn-small">🇬🇧 EN</button>
+                <button type="button" id="setupKeyBtn" class="btn-small badge-ai">⚡ Gemini Flash</button>
+            </div>
+        </div>
+
+        <div id="saveSlotsContainer" class="save-slots-container">
+            <!-- Save slots injected here by JS -->
+        </div>
+
+        <form id="setupForm" style="display:flex; flex-direction:column; gap:14px; margin-top:4px;">
+            <div class="form-group">
+                <label for="mainIdeaInput"><span id="lblMainIdea">Your Adventure Idea</span> <span class="opt-badge" data-i18n="optBadge">Auto-generates if blank</span></label>
+                <textarea id="mainIdeaInput" placeholder="Type any setting, character, or plot... or leave blank for a surprise!" style="min-height: 120px;"></textarea>
+            </div>
+
+            <div class="btn-row">
+                <button type="button" id="surpriseBtn" class="btn-secondary">🎲 Surprise Me</button>
+                <button type="submit" id="startBtn" class="btn-primary">Start Adventure</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- GAME SCREEN -->
+    <div id="gameScreen" class="hidden" style="display:flex; flex-direction:column; height:100%;">
+        <header class="game-header">
+            <div class="header-top">
+                <div class="header-left">
+                    <h2 id="headerTitle">Kaelen 'Vex' Vane — Adventure</h2>
+                    <div id="headerSubtitle" class="header-sub">Cyberpunk • Neo-noir</div>
+                </div>
+                <div class="header-links">
+                    <button type="button" id="restartBtn" class="link-btn link-restart">Restart</button>
+                    <button type="button" id="menuBtn" class="link-btn link-menu">Menu</button>
+                </div>
+            </div>
+
+            <div class="header-bottom">
+                <div class="stats-container">
+                    <div class="stat-box">
+                        <div class="stat-top stat-1-color">
+                            <span id="stat1Label" class="stat-label">Stat 1</span>
+                            <span id="stat1Value" class="stat-value">50</span>
+                        </div>
+                        <div class="stat-bar-bg">
+                            <div id="stat1Bar" class="stat-bar-fill-1" style="width: 50%;"></div>
+                        </div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-top stat-2-color">
+                            <span id="stat2Label" class="stat-label">Stat 2</span>
+                            <span id="stat2Value" class="stat-value">50</span>
+                        </div>
+                        <div class="stat-bar-bg">
+                            <div id="stat2Bar" class="stat-bar-fill-2" style="width: 50%;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="header-controls-right">
+                    <button type="button" id="gameLangBtn" class="btn-small">🇬🇧 EN</button>
+                    <button type="button" id="apiKeyBtn" class="btn-small badge-ai">⚡ 3.8 Flash</button>
+                    <button type="button" id="exportBtn" class="btn-small">Export</button>
+                    <button type="button" id="importBtn" class="btn-small">Import</button>
+                    <input type="file" id="importFile" accept=".json" class="hidden">
+                </div>
+            </div>
+        </header>
+
+        <main id="storyLog" class="story-container"></main>
+
+        <footer class="game-footer">
+            <div class="footer-controls">
+                <button type="button" id="undoBtn" class="control-btn" disabled>↩ Undo</button>
+                <button type="button" id="regenBtn" class="control-btn" disabled>↻ Regenerate</button>
+                <button type="button" id="customPromptBtn" class="control-btn" style="margin-left: auto;">📝 Custom Prompt</button>
+            </div>
+            <form id="actionForm" class="input-row">
+                <input type="text" id="userInput" placeholder="What do you do or say? (Use *asterisks* for actions)" autocomplete="off" required>
+                <button type="submit" id="sendBtn" class="btn-primary">Act</button>
+            </form>
+        </footer>
+    </div>
+</div>
+
+<!-- GEMINI MODEL & API KEY MODAL -->
+<div id="keyModal" class="modal-overlay hidden">
+    <div class="modal-box">
+        <div id="uiKeyModalTitle" class="modal-title">Gemini Model Settings</div>
+        <div id="uiKeyModalDesc" class="modal-desc">
+            Select between Google's official Gemini Flash models. Optionally provide a Google AI Studio API key or leave blank for automatic routing.
+        </div>
+
+        <div class="form-group" style="gap:4px;">
+            <label for="modelSelect" id="lblModelSelect">Gemini Model</label>
+            <select id="modelSelect">
+                <option value="gemini-3.8-flash">Gemini 3.8 Flash (Default / Recommended)</option>
+                <option value="gemini-3.5-flash-lite">Gemini 3.5 Flash-Lite (Fast & Lightweight)</option>
+            </select>
+        </div>
+
+        <div class="form-group" style="gap:4px;">
+            <label for="apiKeyInput"><span id="lblApiKey">Google AI Studio API Key</span> <span id="lblOptionalKey" class="opt-badge">Optional</span></label>
+            <input type="password" id="apiKeyInput" placeholder="AIzaSy... (Leave empty for Automatic Routing)">
+        </div>
+
+        <div id="keyStatusMsg" style="font-size:0.8rem; color:var(--text-muted);"></div>
+
+        <div class="modal-actions">
+            <button type="button" id="clearKeyModalBtn" class="btn-small">Clear Key</button>
+            <button type="button" id="closeKeyModalBtn" class="btn-small">Close</button>
+            <button type="button" id="saveKeyModalBtn" class="btn-primary" style="padding:8px 16px; flex:0 0 auto;">Save Settings</button>
+        </div>
+    </div>
+</div>
+
+<!-- CUSTOM PROMPT MODAL -->
+<div id="customPromptModal" class="modal-overlay hidden">
+    <div class="modal-box">
+        <div id="uiCustomPromptTitle" class="modal-title">Custom AI Rules</div>
+        <div id="uiCustomPromptDesc" class="modal-desc">
+            Add any specific instructions, tone guidelines, or mechanics you want the AI to follow. These persist globally across all games.
+        </div>
+        <textarea id="customPromptInput" style="min-height: 120px;" placeholder="e.g., 'Make the combat extremely brutal, always talk like a pirate...'"></textarea>
+        <div class="modal-actions">
+            <button type="button" id="closeCustomPromptBtn" class="btn-small">Close</button>
+            <button type="button" id="saveCustomPromptBtn" class="btn-primary" style="padding:8px 16px; flex:0 0 auto;">Save Rules</button>
+        </div>
+    </div>
+</div>
+
+<!-- CONFIRMATION MODAL -->
+<div id="confirmModal" class="modal-overlay hidden">
+    <div class="modal-box">
+        <div id="confirmTitle" class="modal-title">Confirm</div>
+        <div id="confirmDesc" class="modal-desc">Are you sure?</div>
+        <div class="modal-actions">
+            <button type="button" id="confirmCancelBtn" class="btn-small">Cancel</button>
+            <button type="button" id="confirmOkBtn" class="btn-primary" style="padding:8px 16px; background:var(--accent-red); color:#fff; flex:0 0 auto;">Confirm</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // System constraints
+    const MAX_SAVES = 5;
+
+    // Environment-injected API key for preview runtime
+    const builtInApiKey = "";
+
+    const STORAGE_KEY_API = "gemini_adventure_api_key_v5";
+    const STORAGE_KEY_MODEL = "gemini_adventure_model_v5";
+    const STORAGE_KEY_LANG = "gemini_adventure_lang_v2";
+    const STORAGE_KEY_PROMPT = "gemini_adventure_custom_prompt_v2";
+    const LOCAL_SAVES_KEY = "ai_adventure_saves_list_v1";
+
+    const I18N = {
+        en: {
+            langBtn: "🇬🇧 EN",
+            setupTitle: "Create Your Adventure",
+            setupSubtitle: "Load a save, or fill in the details below to start anew!",
+            optBadge: "Auto-generates if blank",
+            lblMainIdea: "Your Adventure Idea",
+            phMainIdea: "Type any setting, character, or plot... or leave blank for a surprise!",
+            surpriseBtn: "🎲 Surprise Me",
+            startBtn: "Start Adventure",
+            restartBtn: "Restart",
+            menuBtn: "Menu",
+            exportBtn: "Export",
+            importBtn: "Import",
+            undoBtn: "↩ Undo",
+            regenBtn: "↻ Regenerate",
+            phUserInput: "What do you do or say? (Use *asterisks* for actions)",
+            sendBtn: "Act",
+            youLabel: "YOU",
+            storyLabel: "STORY",
+            errorLabel: "ERROR",
+            generatingScene: "*Generating scene...*",
+            defaultTraveler: "Traveler",
+            defaultGenre: "Adventure",
+            adventureSuffix: " — Adventure",
+            stat1Default: "Stat 1",
+            stat2Default: "Stat 2",
+            keyModalTitle: "Gemini Model Settings",
+            keyModalDesc: "Select between Google's official Gemini Flash models. Optionally provide a Google AI Studio API key or leave blank for automatic routing.",
+            lblModelSelect: "Gemini Model",
+            lblApiKey: "Google AI Studio API Key",
+            lblOptionalKey: "Optional",
+            phApiKey: "AIzaSy... (Leave empty for Automatic Routing)",
+            clearKeyBtn: "Clear Key",
+            closeBtn: "Close",
+            saveKeyBtn: "Save Settings",
+            cancelBtn: "Cancel",
+            confirmBtn: "Confirm",
+            restartTitle: "Restart?",
+            restartDesc: "Reset history and stats to 50?",
+            menuTitle: "Exit to Menu?",
+            menuDesc: "Your progress is automatically saved. Return to start screen?",
+            customKeyActive: "Custom Google AI Studio Key active",
+            autoRoutingActive: "Automatic Routing active",
+            clearedKeyMsg: "Cleared custom key. Automatic routing enabled.",
+            customPromptBtn: "📝 Custom Prompt",
+            promptModalTitle: "Custom AI Rules",
+            promptModalDesc: "Add any specific instructions, tone guidelines, or mechanics you want the AI to follow. These persist globally across all games.",
+            phCustomPrompt: "e.g., 'Make the combat extremely brutal, always talk like a pirate...'",
+            savePromptBtn: "Save Rules",
+            loadBtn: "Load",
+            deleteBtn: "Delete",
+            emptySlot: "Empty Slot",
+            slotFullErr: "Save slots are full! Please delete an existing save first.",
+            deleteSaveTitle: "Delete Save?",
+            deleteSaveDesc: "This will permanently remove this save slot."
+        },
+        pl: {
+            langBtn: "🇵🇱 PL",
+            setupTitle: "Stwórz Swoją Przygodę",
+            setupSubtitle: "Wczytaj grę lub wypełnij szczegóły poniżej, aby zacząć nową!",
+            optBadge: "Auto-generowane jeśli puste",
+            lblMainIdea: "Pomysł na Przygodę",
+            phMainIdea: "Wpisz świat, postać lub fabułę... albo zostaw puste dla niespodzianki!",
+            surpriseBtn: "🎲 Zaskocz mnie",
+            startBtn: "Rozpocznij Przygodę",
+            restartBtn: "Restartuj",
+            menuBtn: "Menu",
+            exportBtn: "Eksportuj",
+            importBtn: "Importuj",
+            undoBtn: "↩ Cofnij",
+            regenBtn: "↻ Ponów",
+            phUserInput: "Co robisz lub mówisz? (Użyj *gwiazdek* dla akcji i myśli)",
+            sendBtn: "Działaj",
+            youLabel: "TY",
+            storyLabel: "HISTORIA",
+            errorLabel: "BŁĄD",
+            generatingScene: "*Generowanie sceny...*",
+            defaultTraveler: "Wędrowiec",
+            defaultGenre: "Przygoda",
+            adventureSuffix: " — Przygoda",
+            stat1Default: "Cecha 1",
+            stat2Default: "Cecha 2",
+            keyModalTitle: "Ustawienia Modelu Gemini",
+            keyModalDesc: "Wybierz oficjalny model Gemini Flash. Opcjonalnie podaj klucz Google AI Studio lub zostaw puste dla automatycznego połączenia.",
+            lblModelSelect: "Model Gemini",
+            lblApiKey: "Klucz API Google AI Studio",
+            lblOptionalKey: "Opcjonalnie",
+            phApiKey: "AIzaSy... (Zostaw puste dla darmowego routingu)",
+            clearKeyBtn: "Wyczyść Klucz",
+            closeBtn: "Zamknij",
+            saveKeyBtn: "Zapisz",
+            cancelBtn: "Anuluj",
+            confirmBtn: "Potwierdź",
+            restartTitle: "Restartować grę?",
+            restartDesc: "Zresetować historię oraz statystyki do 50 i rozpocząć od nowa?",
+            menuTitle: "Wrócić do Menu?",
+            menuDesc: "Twój postęp jest zapisywany automatycznie. Wrócić na ekran startowy?",
+            customKeyActive: "Własny klucz Google AI Studio jest aktywny",
+            autoRoutingActive: "Automatyczny darmowy routing jest aktywny",
+            clearedKeyMsg: "Wyczyszczono klucz. Włączono automatyczny routing.",
+            customPromptBtn: "📝 Własne Zasady",
+            promptModalTitle: "Własne Zasady AI",
+            promptModalDesc: "Dodaj instrukcje, wytyczne co do tonu lub mechaniki. Zapisują się globalnie dla wszystkich gier.",
+            phCustomPrompt: "np. Niech walka będzie bardzo brutalna, używaj wulgarnego języka...",
+            savePromptBtn: "Zapisz Zasady",
+            loadBtn: "Wczytaj",
+            deleteBtn: "Usuń",
+            emptySlot: "Puste miejsce",
+            slotFullErr: "Brak miejsc na zapisy! Usuń istniejący zapis przed stworzeniem nowego.",
+            deleteSaveTitle: "Usunąć zapis?",
+            deleteSaveDesc: "Ta operacja trwale usunie tę zapisaną grę."
+        }
+    };
+
+    function resolveApiKey() {
+        const params = new URLSearchParams(window.location.search);
+        const urlKey = params.get("key") || params.get("apiKey");
+        if (urlKey && urlKey.trim()) {
+            localStorage.setItem(STORAGE_KEY_API, urlKey.trim());
+            window.history.replaceState({}, document.title, window.location.pathname);
+            return urlKey.trim();
+        }
+        const saved = localStorage.getItem(STORAGE_KEY_API);
+        if (saved && saved.trim()) return saved.trim();
+        if (typeof builtInApiKey === "string" && builtInApiKey.trim()) return builtInApiKey.trim();
+        return "";
+    }
+
+    function resolveModel() {
+        const saved = localStorage.getItem(STORAGE_KEY_MODEL);
+        if (saved === "gemini-3.8-flash" || saved === "gemini-3.5-flash-lite") return saved;
+        return "gemini-3.8-flash";
+    }
+
+    function resolveLang() {
+        const saved = localStorage.getItem(STORAGE_KEY_LANG);
+        if (saved === "pl" || saved === "en") return saved;
+        return "en";
+    }
+
+    let currentApiKey = resolveApiKey();
+    let currentModel = resolveModel();
+    let currentLang = resolveLang();
+
+    function t(key) {
+        return I18N[currentLang]?.[key] || I18N.en[key] || key;
+    }
+
+    let saves = []; // Array of up to 5 game states
+    let currentSaveIndex = -1;
+    let gameState = null; // Active game object reference
+
+    // DOM Elements
+    const setupScreen = document.getElementById("setupScreen");
+    const gameScreen = document.getElementById("gameScreen");
+    const setupForm = document.getElementById("setupForm");
+    const saveSlotsContainer = document.getElementById("saveSlotsContainer");
+    const surpriseBtn = document.getElementById("surpriseBtn");
+    const startBtn = document.getElementById("startBtn");
+    const storyLog = document.getElementById("storyLog");
+    const actionForm = document.getElementById("actionForm");
+    const userInput = document.getElementById("userInput");
+    const sendBtn = document.getElementById("sendBtn");
+    const undoBtn = document.getElementById("undoBtn");
+    const regenBtn = document.getElementById("regenBtn");
+    const customPromptBtn = document.getElementById("customPromptBtn");
+
+    const stat1Label = document.getElementById("stat1Label");
+    const stat2Label = document.getElementById("stat2Label");
+    const stat1Value = document.getElementById("stat1Value");
+    const stat2Value = document.getElementById("stat2Value");
+    const stat1Bar = document.getElementById("stat1Bar");
+    const stat2Bar = document.getElementById("stat2Bar");
+    const headerTitle = document.getElementById("headerTitle");
+    const headerSubtitle = document.getElementById("headerSubtitle");
+    const setupKeyBtn = document.getElementById("setupKeyBtn");
+    const apiKeyBtn = document.getElementById("apiKeyBtn");
+    const setupLangBtn = document.getElementById("setupLangBtn");
+    const gameLangBtn = document.getElementById("gameLangBtn");
+    
+    const modelSelect = document.getElementById("modelSelect");
+    const apiKeyInput = document.getElementById("apiKeyInput");
+    const keyStatusMsg = document.getElementById("keyStatusMsg");
+    const keyModal = document.getElementById("keyModal");
+    
+    const customPromptModal = document.getElementById("customPromptModal");
+    const customPromptInput = document.getElementById("customPromptInput");
+
+    function applyTranslations() {
+        currentLang = resolveLang();
+        document.documentElement.lang = currentLang;
+
+        setupLangBtn.textContent = t("langBtn");
+        gameLangBtn.textContent = t("langBtn");
+
+        document.getElementById("uiSetupTitle").textContent = t("setupTitle");
+        document.getElementById("uiSetupSubtitle").textContent = t("setupSubtitle");
+        document.querySelectorAll('[data-i18n="optBadge"]').forEach(el => { el.textContent = t("optBadge"); });
+
+        const lblMainIdea = document.getElementById("lblMainIdea");
+        if (lblMainIdea) lblMainIdea.textContent = t("lblMainIdea");
+        const mainIdeaInput = document.getElementById("mainIdeaInput");
+        if (mainIdeaInput) mainIdeaInput.placeholder = t("phMainIdea");
+
+        surpriseBtn.textContent = t("surpriseBtn");
+        startBtn.textContent = t("startBtn");
+        document.getElementById("restartBtn").textContent = t("restartBtn");
+        document.getElementById("menuBtn").textContent = t("menuBtn");
+        document.getElementById("exportBtn").textContent = t("exportBtn");
+        document.getElementById("importBtn").textContent = t("importBtn");
+
+        undoBtn.textContent = t("undoBtn");
+        regenBtn.textContent = t("regenBtn");
+        userInput.placeholder = t("phUserInput");
+        sendBtn.textContent = t("sendBtn");
+
+        document.getElementById("uiKeyModalTitle").textContent = t("keyModalTitle");
+        document.getElementById("uiKeyModalDesc").textContent = t("keyModalDesc");
+        document.getElementById("lblModelSelect").textContent = t("lblModelSelect");
+        document.getElementById("lblApiKey").textContent = t("lblApiKey");
+        document.getElementById("lblOptionalKey").textContent = t("lblOptionalKey");
+        apiKeyInput.placeholder = t("phApiKey");
+        document.getElementById("clearKeyModalBtn").textContent = t("clearKeyBtn");
+        document.getElementById("closeKeyModalBtn").textContent = t("closeBtn");
+        document.getElementById("saveKeyModalBtn").textContent = t("saveKeyBtn");
+        document.getElementById("confirmCancelBtn").textContent = t("cancelBtn");
+        document.getElementById("confirmOkBtn").textContent = t("confirmBtn");
+
+        customPromptBtn.textContent = t("customPromptBtn");
+        document.getElementById("uiCustomPromptTitle").textContent = t("promptModalTitle");
+        document.getElementById("uiCustomPromptDesc").textContent = t("promptModalDesc");
+        customPromptInput.placeholder = t("phCustomPrompt");
+        document.getElementById("closeCustomPromptBtn").textContent = t("closeBtn");
+        document.getElementById("saveCustomPromptBtn").textContent = t("savePromptBtn");
+
+        renderSaveSlots();
+    }
+
+    function toggleLanguage() {
+        currentLang = currentLang === "en" ? "pl" : "en";
+        localStorage.setItem(STORAGE_KEY_LANG, currentLang);
+        applyTranslations();
+        updateUI();
+    }
+
+    setupLangBtn.addEventListener("click", toggleLanguage);
+    gameLangBtn.addEventListener("click", toggleLanguage);
+
+    function updateBadgeUI() {
+        currentModel = resolveModel();
+        currentApiKey = resolveApiKey();
+        const shortName = currentModel === "gemini-3.5-flash-lite" ? "3.5 Flash-Lite" : "3.8 Flash";
+        setupKeyBtn.textContent = `⚡ ${shortName}`;
+        apiKeyBtn.textContent = `⚡ ${shortName}`;
+    }
+
+    function formatText(rawText) {
+        const escaped = String(rawText || "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;");
+        const withActions = escaped.replace(/\*([^*]+)\*/g, '<span class="action-text">*$1*</span>');
+        return withActions.replace(/\n/g, "<br>");
+    }
+
+    function updateUI() {
+        updateBadgeUI();
+        if (!gameState || !gameState.active) {
+            setupScreen.classList.remove("hidden");
+            gameScreen.classList.add("hidden");
+            renderSaveSlots();
+            return;
+        }
+
+        setupScreen.classList.add("hidden");
+        gameScreen.classList.remove("hidden");
+
+        const pName = gameState.config?.playerName || t("defaultTraveler");
+        const gName = gameState.config?.genre || t("defaultGenre");
+        const subName = gameState.config?.subgenre ? ` • ${gameState.config.subgenre}` : "";
+
+        headerTitle.textContent = `${pName}${t("adventureSuffix")}`;
+        headerSubtitle.textContent = `${gName}${subName}`;
+
+        const dispStat1 = (gameState.stat1Name === "Stat 1" || gameState.stat1Name === "Cecha 1") ? t("stat1Default") : gameState.stat1Name;
+        const dispStat2 = (gameState.stat2Name === "Stat 2" || gameState.stat2Name === "Cecha 2") ? t("stat2Default") : gameState.stat2Name;
+
+        stat1Label.textContent = dispStat1;
+        stat1Label.title = dispStat1; // Tooltip for overflow
+        stat2Label.textContent = dispStat2;
+        stat2Label.title = dispStat2;
+        
+        stat1Value.textContent = gameState.stat1;
+        stat2Value.textContent = gameState.stat2;
+        stat1Bar.style.width = `${Math.max(0, Math.min(100, gameState.stat1))}%`;
+        stat2Bar.style.width = `${Math.max(0, Math.min(100, gameState.stat2))}%`;
+
+        storyLog.innerHTML = "";
+        gameState.history.forEach(item => {
+            if (item.hiddenPrompt) return;
+            const card = document.createElement("div");
+            card.className = `message-card ${item.role === "user" ? "msg-user" : "msg-ai"}`;
+            
+            const label = document.createElement("div");
+            label.className = "msg-label";
+            const modelUsed = item.modelUsed ? ` • ${item.modelUsed.replace('gemini-','')}` : "";
+            label.innerHTML = `<span>${item.role === "user" ? t("youLabel") : t("storyLabel")}</span><span style="font-size:0.65rem; opacity:0.6;">${modelUsed}</span>`;
+
+            const content = document.createElement("div");
+            content.innerHTML = formatText(item.text);
+            card.appendChild(label);
+            card.appendChild(content);
+            storyLog.appendChild(card);
+        });
+
+        storyLog.scrollTop = storyLog.scrollHeight;
+
+        const visibleTurns = gameState.history.filter(h => !h.hiddenPrompt);
+        undoBtn.disabled = visibleTurns.length <= 1;
+        regenBtn.disabled = visibleTurns.length === 0;
+    }
+
+    // --- Save System Logic ---
+    function loadAllSaves() {
+        const raw = localStorage.getItem(LOCAL_SAVES_KEY);
+        if (raw) {
+            try {
+                saves = JSON.parse(raw);
+                if (!Array.isArray(saves)) saves = [];
+            } catch (e) {
+                saves = [];
+            }
+        }
+        
+        // Migrate old v4 save if it exists and slots are empty
+        const oldSave = localStorage.getItem("ai_adventure_save_gemini_v4");
+        if (oldSave && saves.length === 0) {
+            try {
+                const parsedOld = JSON.parse(oldSave);
+                if (parsedOld && parsedOld.active) {
+                    saves.push(parsedOld);
+                    localStorage.removeItem("ai_adventure_save_gemini_v4");
+                }
+            } catch(e) {}
+        }
+    }
+
+    function writeAllSaves() {
+        localStorage.setItem(LOCAL_SAVES_KEY, JSON.stringify(saves));
+    }
+
+    function saveActiveGame() {
+        if (currentSaveIndex >= 0 && currentSaveIndex < saves.length) {
+            saves[currentSaveIndex] = gameState;
+        } else if (saves.length < MAX_SAVES) {
+            saves.push(gameState);
+            currentSaveIndex = saves.length - 1;
+        }
+        writeAllSaves();
+    }
+
+    function renderSaveSlots() {
+        saveSlotsContainer.innerHTML = "";
+        if (saves.length === 0) {
+            saveSlotsContainer.style.display = "none";
+            return;
+        }
+        saveSlotsContainer.style.display = "flex";
+
+        saves.forEach((save, index) => {
+            if(!save) return;
+            const turns = save.history ? save.history.filter(h => !h.hiddenPrompt && h.role === "user").length : 0;
+            const pName = save.config?.playerName || t("defaultTraveler");
+            const gName = save.config?.genre || t("defaultGenre");
+            
+            const slotEl = document.createElement("div");
+            slotEl.className = "save-slot";
+            
+            const infoEl = document.createElement("div");
+            infoEl.className = "save-slot-info";
+            infoEl.innerHTML = `<span class="save-slot-title">${pName}</span><span class="save-slot-desc">${gName} • ${turns} turns</span>`;
+            
+            const actionsEl = document.createElement("div");
+            actionsEl.className = "save-slot-actions";
+            
+            const loadBtn = document.createElement("button");
+            loadBtn.className = "btn-small";
+            loadBtn.textContent = t("loadBtn");
+            loadBtn.onclick = () => {
+                currentSaveIndex = index;
+                gameState = saves[index];
+                updateUI();
+            };
+            
+            const delBtn = document.createElement("button");
+            delBtn.className = "btn-small danger";
+            delBtn.textContent = t("deleteBtn");
+            delBtn.onclick = () => {
+                openConfirm(t("deleteSaveTitle"), t("deleteSaveDesc"), () => {
+                    saves.splice(index, 1);
+                    writeAllSaves();
+                    renderSaveSlots();
+                });
+            };
+            
+            actionsEl.appendChild(loadBtn);
+            actionsEl.appendChild(delBtn);
+            slotEl.appendChild(infoEl);
+            slotEl.appendChild(actionsEl);
+            
+            saveSlotsContainer.appendChild(slotEl);
+        });
+    }
+
+    // --- Core Game Logic ---
+    function buildSystemPrompt() {
+        const c = gameState.config || {};
+        const isPL = currentLang === "pl";
+        const styleInstruction = currentModel === "gemini-3.5-flash-lite"
+            ? (isPL ? "Pisz zwięźle, dynamicznie i konkretnie (2 krótkie akapity)." : "Keep narration brisk, fast-paced, punchy, and concise (2 short paragraphs).")
+            : (isPL ? "Pisz plastycznie, klimatycznie i wciągająco (od 2 do 4 krótkich akapitów)." : "Keep narration vivid, atmospheric, emotionally resonant, and immersive (2 to 4 short paragraphs).");
+
+        const langInstruction = isPL
+            ? `WAŻNE - JĘZYK POLSKI: Pisz CAŁĄ narrację, dialogi, opisy akcji w *gwiazdkach*, wymyślane pola świata/postaci oraz jednowyrazowe nazwy obu statystyk (stat1Name i stat2Name) wyłącznie w naturalnym, płynnym języku polskim! Nawet jeśli wcześniejsze tury były po angielsku, od teraz odpowiadaj po polsku.`
+            : `IMPORTANT - LANGUAGE: Write the entire narrative, spoken dialogue, *actions in asterisks*, invented world/character fields, and the two 1-word stat names in fluent English. Even if earlier turns were in another language, respond in English now.`;
+
+        const basePrompt = `You are an interactive fiction Game Master running an engaging text adventure game (${currentModel}).
+${langInstruction}
+
+Current World & Character Configuration (any field marked "[AI TO INVENT]" must be creatively invented by you right now on Turn 1 in ${isPL ? "Polish" : "English"}!):
+- Primary Genre: ${c.genre || "[AI TO INVENT]"}
+- Supporting Subgenres: ${c.subgenre || "[AI TO INVENT]"}
+- Player Name: ${c.playerName || "[AI TO INVENT]"}
+- Player Role / Trait: ${c.playerDesc || "[AI TO INVENT]"}
+- Key Characters: ${c.characters || "[AI TO INVENT]"}
+- Setting & Starting Scenario: ${c.setting || "[AI TO INVENT]"}
+
+Formatting & Gameplay Rules:
+1. Write in second person (${isPL ? '"Ty..." / czasowniki w 2. osobie lp. po polsku' : '"You..."'}). ${styleInstruction}
+2. Wrap ALL physical actions, body language, environmental descriptions, and inner thoughts in single asterisks like *this* so they render in cursive. Keep spoken dialogue in standard quotes like "this".
+3. Never decide the player's actions or spoken lines for them. End every turn at a moment where the player can act or speak.
+4. On the VERY FIRST turn, if any setup fields were "[AI TO INVENT]", seamlessly introduce your invented values in the opening scene, and return them inside the hidden ||STATS:{...}|| JSON block so the engine saves them permanently.
+5. Also on the VERY FIRST turn (or if stat names are still default), invent two fitting 1-word personality/status meter names tailored to the genre in ${isPL ? "Polish (e.g., \"Hart\" & \"Rozsądek\")" : "English (e.g., \"Grit\" & \"Sanity\")"}.
+6. At the VERY END of EVERY response, append a single hidden metadata block in this exact one-line format:
+||STATS:{"stat1Name": "${gameState.stat1Name}", "stat2Name": "${gameState.stat2Name}", "stat1Delta": 0, "stat2Delta": 0, "playerName": "${c.playerName || ""}", "playerDesc": "${c.playerDesc || ""}", "genre": "${c.genre || ""}", "subgenre": "${c.subgenre || ""}", "characters": "${c.characters || ""}", "setting": "${c.setting || ""}"}||`;
+
+        const savedCustomPrompt = localStorage.getItem(STORAGE_KEY_PROMPT) || "";
+        if (savedCustomPrompt.trim()) {
+            return basePrompt + `\n\n[ADDITIONAL CUSTOM RULES FROM PLAYER]:\n${savedCustomPrompt.trim()}`;
+        }
+        return basePrompt;
+    }
+
+    function cleanAIResponse(raw) {
+        if (!raw) return "";
+        return String(raw).replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+    }
+
+    async function callDirectGoogleGemini(systemPrompt, contents, activeKey) {
+        const systemInstruction = { parts: [{ text: systemPrompt }] };
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${encodeURIComponent(activeKey)}`;
+        const res = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                systemInstruction,
+                contents,
+                generationConfig: {
+                    temperature: currentModel === "gemini-3.5-flash-lite" ? 0.75 : 0.9
+                }
+            })
+        });
+        if (!res.ok) throw new Error(`[${currentModel}] API Error ${res.status}`);
+        const data = await res.json();
+        const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (reply && reply.trim()) return cleanAIResponse(reply);
+        return null;
+    }
+
+    async function callKeylessPublicCascade(systemPrompt, contents) {
+        const langReminder = currentLang === "pl"
+            ? "\n[System Reminder: Odpowiedz w 100% po polsku i zakończ blokiem ||STATS:{...}||]"
+            : "\n[System Reminder: Respond in English and end with the ||STATS:{...}|| block]";
+
+        const messages = [
+            { role: "system", content: systemPrompt },
+            ...contents.map((c, idx) => ({
+                role: c.role === "model" ? "assistant" : "user",
+                content: idx === contents.length - 1 ? c.parts[0].text + langReminder : c.parts[0].text
+            }))
+        ];
+        
+        // Use generic openai alias on pollinations to avoid 402 model restrictions
+        const res = await fetch("https://text.pollinations.ai/openai", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                messages,
+                model: "openai",
+                seed: Math.floor(Math.random() * 1000000)
+            })
+        });
+
+        if (res.ok) {
+            const data = await res.json();
+            const text = data?.choices?.[0]?.message?.content;
+            if (text && text.trim()) return cleanAIResponse(text);
+        }
+        
+        // Fallback to GET
+        const recentTurns = contents.slice(-6).map(c => `${c.role === "model" ? "STORY" : "PLAYER"}: ${c.parts[0].text}`).join("\n\n");
+        const combinedPrompt = `${systemPrompt}\n\nRecent Story History:\n${recentTurns}\n\nWrite the next STORY response now in ${currentLang === "pl" ? "POLISH (po polsku)" : "ENGLISH"} (include ||STATS:{...}|| at the end):`;
+        const getUrl = `https://text.pollinations.ai/${encodeURIComponent(combinedPrompt)}?seed=${Math.floor(Math.random() * 100000)}`;
+
+        const getRes = await fetch(getUrl, { method: "GET" });
+        if (getRes.ok) {
+            const text = await getRes.text();
+            if (text && text.trim()) return cleanAIResponse(text);
+        }
+
+        throw new Error(`Unable to reach free AI service. Please add a Google AI Studio key in the Model settings.`);
+    }
+
+    async function callGeminiAPI(contents) {
+        currentModel = resolveModel();
+        currentApiKey = resolveApiKey();
+        const systemPrompt = buildSystemPrompt();
+
+        if (currentApiKey) {
+            try {
+                const directReply = await callDirectGoogleGemini(systemPrompt, contents, currentApiKey);
+                if (directReply) return directReply;
+            } catch (e) {
+                console.warn("Direct API failed, trying free cascade.", e);
+            }
+        }
+        
+        return await callKeylessPublicCascade(systemPrompt, contents);
+    }
+
+    function parseAndApplyStats(rawReply) {
+        let cleanText = rawReply;
+        const regex = /\|\|STATS:(\{[\s\S]*?\})\|\|/;
+        const match = rawReply.match(regex);
+
+        if (match) {
+            cleanText = rawReply.replace(regex, "").trim();
+            try {
+                const statsObj = JSON.parse(match[1]);
+                const isDefaultStat1 = gameState.stat1Name === "Stat 1" || gameState.stat1Name === "Cecha 1" || !gameState.stat1Name;
+                const isDefaultStat2 = gameState.stat2Name === "Stat 2" || gameState.stat2Name === "Cecha 2" || !gameState.stat2Name;
+
+                if (statsObj.stat1Name && (isDefaultStat1 || statsObj.stat1Name !== gameState.stat1Name)) {
+                    gameState.stat1Name = String(statsObj.stat1Name).slice(0, 14);
+                }
+                if (statsObj.stat2Name && (isDefaultStat2 || statsObj.stat2Name !== gameState.stat2Name)) {
+                    gameState.stat2Name = String(statsObj.stat2Name).slice(0, 14);
+                }
+
+                if (gameState.config) {
+                    if (!gameState.config.playerName && statsObj.playerName) gameState.config.playerName = String(statsObj.playerName).trim();
+                    if (!gameState.config.playerDesc && statsObj.playerDesc) gameState.config.playerDesc = String(statsObj.playerDesc).trim();
+                    if (!gameState.config.genre && statsObj.genre) gameState.config.genre = String(statsObj.genre).trim();
+                    if (!gameState.config.subgenre && statsObj.subgenre) gameState.config.subgenre = String(statsObj.subgenre).trim();
+                    if (!gameState.config.characters && statsObj.characters) gameState.config.characters = String(statsObj.characters).trim();
+                    if (!gameState.config.setting && statsObj.setting) gameState.config.setting = String(statsObj.setting).trim();
+                }
+
+                const d1 = Number(statsObj.stat1Delta) || 0;
+                const d2 = Number(statsObj.stat2Delta) || 0;
+                gameState.stat1 = Math.max(0, Math.min(100, gameState.stat1 + d1));
+                gameState.stat2 = Math.max(0, Math.min(100, gameState.stat2 + d2));
+            } catch (e) {
+                console.warn("Could not parse STATS JSON:", e);
+            }
+        }
+
+        if (gameState.config) {
+            if (!gameState.config.playerName) gameState.config.playerName = t("defaultTraveler");
+            if (!gameState.config.genre) gameState.config.genre = t("defaultGenre");
+        }
+
+        return cleanText;
+    }
+
+    async function generateTurn() {
+        sendBtn.disabled = true;
+        userInput.disabled = true;
+        undoBtn.disabled = true;
+        regenBtn.disabled = true;
+
+        const loadingCard = document.createElement("div");
+        loadingCard.className = "message-card msg-ai";
+        loadingCard.innerHTML = `<div class="msg-label"><span>${t("storyLabel")}</span><span>${currentModel}</span></div><div class="action-text">${t("generatingScene")}</div>`;
+        storyLog.appendChild(loadingCard);
+        storyLog.scrollTop = storyLog.scrollHeight;
+
+        const apiContents = gameState.history.map(h => ({
+            role: h.role,
+            parts: [{ text: h.text }]
+        }));
+
+        try {
+            const rawReply = await callGeminiAPI(apiContents);
+            const cleanReply = parseAndApplyStats(rawReply);
+
+            gameState.history.push({
+                role: "model",
+                text: cleanReply,
+                stat1: gameState.stat1,
+                stat2: gameState.stat2,
+                stat1Name: gameState.stat1Name,
+                stat2Name: gameState.stat2Name,
+                modelUsed: currentModel
+            });
+            saveActiveGame();
+            updateUI();
+        } catch (err) {
+            loadingCard.innerHTML = `<div class="msg-label"><span>${t("errorLabel")}</span></div><div>${formatText(err.message)}</div>`;
+        } finally {
+            sendBtn.disabled = false;
+            userInput.disabled = false;
+            userInput.focus();
+            const visibleTurns = gameState.history.filter(h => !h.hiddenPrompt);
+            undoBtn.disabled = visibleTurns.length <= 1;
+            regenBtn.disabled = visibleTurns.length === 0;
+        }
+    }
+
+    async function startNewScenario(isRestart = false) {
+        let newConfig = {};
+        if (isRestart && gameState && gameState.config) {
+            newConfig = gameState.config; // Preserve config on Restart
+        } else {
+            const mainIdeaInput = document.getElementById("mainIdeaInput");
+            newConfig = {
+                mainIdea: mainIdeaInput ? mainIdeaInput.value.trim() : "",
+            };
+        }
+
+        gameState = {
+            active: true,
+            stat1Name: t("stat1Default"),
+            stat2Name: t("stat2Default"),
+            stat1: 50,
+            stat2: 50,
+            config: newConfig,
+            history: []
+        };
+
+        const c = gameState.config;
+        const isPL = currentLang === "pl";
+        let promptText = "";
+
+        if (c.mainIdea) {
+            promptText = isPL
+                ? `Rozpocznij przygodę po polsku opartą na tym pomyśle: "${c.mainIdea}". Wymyśl bohatera, gatunek i szczegóły świata, wpleć je w scenę otwierającą i zwróć w bloku ||STATS:{...}|| na końcu.`
+                : `Start the adventure in English based on this idea: "${c.mainIdea}". Invent the protagonist, genre, and world details, weave them into the opening scene, and return them in the ||STATS:{...}|| block.`;
+        } else if (c.setting || c.characters || c.genre) {
+            // Support restarting old legacy loaded saves that had detailed config
+            const missing = [];
+            if (!c.genre) missing.push("Genre");
+            if (!c.subgenre) missing.push("Subgenre");
+            if (!c.playerName) missing.push("Player Name");
+            if (!c.playerDesc) missing.push("Role");
+            if (!c.characters) missing.push("Characters");
+            if (!c.setting) missing.push("Setting");
+
+            promptText = missing.length > 0
+                ? (isPL
+                    ? `Rozpocznij przygodę po polsku. Wymyśl ciekawe szczegóły dla brakujących pól: [${missing.join(", ")}], wpleć je naturalnie w scenę otwierającą i zwróć w bloku ||STATS:{...}|| na końcu.`
+                    : `Start the adventure in English. Invent compelling details for missing fields: [${missing.join(", ")}], weave them into the opening scene, and return them in the ||STATS:{...}|| block.`)
+                : (isPL
+                    ? `Rozpocznij przygodę po polsku w świecie (${c.setting}) z postaciami (${c.characters}).`
+                    : `Start the adventure in English in setting (${c.setting}) with characters (${c.characters}).`);
+        } else {
+            promptText = isPL
+                ? `Rozpocznij całkowicie losową przygodę po polsku. Wymyśl ciekawy świat, gatunek i bohatera, wpleć je w scenę otwierającą i zwróć w bloku ||STATS:{...}|| na końcu.`
+                : `Start a completely random adventure in English. Invent a compelling world, genre, and protagonist, weave them into the opening scene, and return them in the ||STATS:{...}|| block.`;
+        }
+
+        gameState.history.push({
+            role: "user",
+            text: promptText,
+            hiddenPrompt: true,
+            stat1: 50, stat2: 50, stat1Name: gameState.stat1Name, stat2Name: gameState.stat2Name
+        });
+        
+        saveActiveGame();
+        updateUI();
+        await generateTurn();
+    }
+
+    function launchFromForm() {
+        if (saves.length >= MAX_SAVES) {
+            alert(t("slotFullErr"));
+            return;
+        }
+        currentSaveIndex = saves.length; // Append to end
+        startNewScenario();
+    }
+
+    setupForm.addEventListener("submit", (e) => { e.preventDefault(); launchFromForm(); });
+    surpriseBtn.addEventListener("click", () => { setupForm.reset(); launchFromForm(); });
+
+    actionForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const text = userInput.value.trim();
+        if (!text) return;
+        userInput.value = "";
+        gameState.history.push({
+            role: "user",
+            text,
+            stat1: gameState.stat1,
+            stat2: gameState.stat2,
+            stat1Name: gameState.stat1Name,
+            stat2Name: gameState.stat2Name
+        });
+        saveActiveGame();
+        updateUI();
+        await generateTurn();
+    });
+
+    undoBtn.addEventListener("click", () => {
+        if (gameState.history.length <= 2) return;
+        if (gameState.history[gameState.history.length - 1].role === "model") gameState.history.pop();
+        if (gameState.history.length > 1 && gameState.history[gameState.history.length - 1].role === "user") gameState.history.pop();
+        const last = gameState.history[gameState.history.length - 1];
+        if (last) {
+            gameState.stat1 = last.stat1 ?? 50;
+            gameState.stat2 = last.stat2 ?? 50;
+            gameState.stat1Name = last.stat1Name || gameState.stat1Name;
+            gameState.stat2Name = last.stat2Name || gameState.stat2Name;
+        }
+        saveActiveGame();
+        updateUI();
+    });
+
+    regenBtn.addEventListener("click", async () => {
+        if (gameState.history.length === 0) return;
+        if (gameState.history[gameState.history.length - 1].role === "model") gameState.history.pop();
+        saveActiveGame();
+        updateUI();
+        await generateTurn();
+    });
+
+    // Modals
+    const confirmModal = document.getElementById("confirmModal");
+    document.getElementById("confirmCancelBtn").addEventListener("click", () => confirmModal.classList.add("hidden"));
+    let pendingAction = null;
+
+    function openConfirm(title, desc, cb) {
+        document.getElementById("confirmTitle").textContent = title;
+        document.getElementById("confirmDesc").textContent = desc;
+        pendingAction = cb;
+        confirmModal.classList.remove("hidden");
+    }
+    document.getElementById("confirmOkBtn").addEventListener("click", () => {
+        confirmModal.classList.add("hidden");
+        if (pendingAction) pendingAction();
+        pendingAction = null;
+    });
+
+    document.getElementById("restartBtn").addEventListener("click", () => {
+        openConfirm(t("restartTitle"), t("restartDesc"), () => {
+            startNewScenario(true); // Pass true to preserve config
+        });
+    });
+    
+    document.getElementById("menuBtn").addEventListener("click", () => {
+        openConfirm(t("menuTitle"), t("menuDesc"), () => {
+            gameState = null;
+            currentSaveIndex = -1;
+            setupForm.reset();
+            updateUI();
+        });
+    });
+
+    function openKeyModal() {
+        apiKeyInput.value = localStorage.getItem(STORAGE_KEY_API) || "";
+        modelSelect.value = resolveModel();
+        keyStatusMsg.textContent = apiKeyInput.value
+            ? `${t("customKeyActive")} (${resolveModel()}).`
+            : `${t("autoRoutingActive")} (${resolveModel()}).`;
+        keyModal.classList.remove("hidden");
+    }
+
+    setupKeyBtn.addEventListener("click", openKeyModal);
+    apiKeyBtn.addEventListener("click", openKeyModal);
+    document.getElementById("closeKeyModalBtn").addEventListener("click", () => keyModal.classList.add("hidden"));
+
+    document.getElementById("clearKeyModalBtn").addEventListener("click", () => {
+        localStorage.removeItem(STORAGE_KEY_API);
+        apiKeyInput.value = "";
+        currentApiKey = resolveApiKey();
+        keyStatusMsg.style.color = "var(--accent-green)";
+        keyStatusMsg.textContent = t("clearedKeyMsg");
+        updateBadgeUI();
+    });
+
+    document.getElementById("saveKeyModalBtn").addEventListener("click", () => {
+        const val = apiKeyInput.value.trim();
+        const selectedModel = modelSelect.value;
+
+        localStorage.setItem(STORAGE_KEY_MODEL, selectedModel);
+        currentModel = selectedModel;
+
+        if (val) {
+            localStorage.setItem(STORAGE_KEY_API, val);
+        } else {
+            localStorage.removeItem(STORAGE_KEY_API);
+        }
+        currentApiKey = resolveApiKey();
+        updateBadgeUI();
+        keyModal.classList.add("hidden");
+    });
+
+    // Custom Prompt Logic
+    customPromptBtn.addEventListener("click", () => {
+        customPromptInput.value = localStorage.getItem(STORAGE_KEY_PROMPT) || "";
+        customPromptModal.classList.remove("hidden");
+    });
+
+    document.getElementById("closeCustomPromptBtn").addEventListener("click", () => {
+        customPromptModal.classList.add("hidden");
+    });
+
+    document.getElementById("saveCustomPromptBtn").addEventListener("click", () => {
+        localStorage.setItem(STORAGE_KEY_PROMPT, customPromptInput.value.trim());
+        customPromptModal.classList.add("hidden");
+    });
+
+    // Import/Export
+    document.getElementById("exportBtn").addEventListener("click", () => {
+        if (!gameState) return;
+        const blob = new Blob([JSON.stringify(gameState, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${(gameState.config?.playerName || "adventure").toLowerCase()}_save.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+    });
+
+    const importFile = document.getElementById("importFile");
+    document.getElementById("importBtn").addEventListener("click", () => importFile.click());
+    importFile.addEventListener("change", (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            try {
+                const imported = JSON.parse(ev.target.result);
+                if (imported && imported.config) {
+                    gameState = imported;
+                    gameState.active = true;
+                    saveActiveGame();
+                    updateUI();
+                }
+            } catch (err) { alert("Invalid save file."); }
+        };
+        reader.readAsText(file);
+    });
+
+    // Init
+    loadAllSaves();
+    applyTranslations();
+    updateUI();
+</script>
+</body>
+</html>
