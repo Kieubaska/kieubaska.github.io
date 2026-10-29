@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Romance Adventure - Material Design 3</title>
+    <!-- Google Fonts for Material Roboto -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --md-sys-color-background: #111318;
+            --md-sys-color-surface: #111318;
+            --md-sys-color-surface-container-low: #191c20;
+            --md-sys-color-surface-container: #1d2024;
+            --md-sys-color-surface-container-high: #272a2e;
+            --md-sys-color-primary: #d0bcff;
+            --md-sys-color-on-primary: #381e72;
+            --md-sys-color-primary-container: #4f378b;
+            --md-sys-color-on-primary-container: #eaddff;
+            --md-sys-color-secondary: #ccc2dc;
+            --md-sys-color-on-secondary: #332d41;
+            --md-sys-color-secondary-container: #4a4458;
+            --md-sys-color-on-secondary-container: #e8def8;
+            --md-sys-color-outline: #8c9199;
+            --md-sys-color-outline-variant: #44474f;
+            --md-sys-color-error: #ffb4ab;
+            --md-sys-color-on-error: #690005;
+            --md-sys-color-error-container: #93000a;
+            --md-sys-color-on-error-container: #ffdad6;
+            --md-sys-color-on-surface: #e2e2e6;
+            --md-sys-color-on-surface-variant: #c4c6d0;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--md-sys-color-background);
+            color: var(--md-sys-color-on-surface);
+            line-height: 1.5;
+            display: flex;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 840px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--md-sys-color-surface);
+            border-left: 1px solid var(--md-sys-color-outline-variant);
+            border-right: 1px solid var(--md-sys-color-outline-variant);
+        }
+
+        .hidden { display: none !important; }
+
+        /* M3 Buttons */
+        .btn {
+            padding: 10px 24px; border: none; border-radius: 20px;
+            font-size: 0.95rem; font-weight: 500; cursor: pointer;
+            display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+            transition: background-color 0.2s, box-shadow 0.2s;
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn.primary { background-color: var(--md-sys-color-primary); color: var(--md-sys-color-on-primary); }
+        .btn.primary:hover { box-shadow: 0 1px 3px rgba(0,0,0,0.3); background-color: #e2d3ff; }
+        .btn.secondary { background-color: var(--md-sys-color-surface-container-high); color: var(--md-sys-color-on-surface); border: 1px solid var(--md-sys-color-outline-variant); }
+        .btn.secondary:hover { background-color: #33383e; }
+        .btn.danger { background-color: var(--md-sys-color-error-container); color: var(--md-sys-color-on-error-container); }
+        
+        .btn-small {
+            padding: 6px 16px; font-size: 0.85rem; border-radius: 16px; border: none;
+            background-color: var(--md-sys-color-surface-container-high); color: var(--md-sys-color-on-surface); cursor: pointer;
+        }
+        .btn-small:hover { background-color: #33383e; }
+        .btn-small.danger { background-color: var(--md-sys-color-error-container); color: var(--md-sys-color-on-error-container); }
+
+        /* Setup Screen */
+        .setup-screen { padding: 24px; overflow-y: auto; height: 100%; }
+        .setup-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; }
+        .setup-header h1 { font-size: 2rem; font-weight: 500; color: var(--md-sys-color-primary); }
+        .setup-header p { color: var(--md-sys-color-on-surface-variant); font-size: 0.95rem; margin-top: 4px; }
+        .header-actions { display: flex; gap: 8px; }
+
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-group label { font-size: 0.85rem; font-weight: 500; color: var(--md-sys-color-on-surface-variant); }
+        .opt-badge { font-size: 0.7rem; color: var(--md-sys-color-outline); background: var(--md-sys-color-surface-container-high); padding: 2px 6px; border-radius: 4px; margin-left: 4px; }
+
+        input[type="text"], textarea, select {
+            width: 100%; padding: 12px 16px; border-radius: 12px;
+            background-color: var(--md-sys-color-surface-container); color: var(--md-sys-color-on-surface);
+            border: 1px solid var(--md-sys-color-outline-variant); font-family: inherit; font-size: 0.95rem;
+        }
+        input:focus, textarea:focus, select:focus { outline: none; border-color: var(--md-sys-color-primary); border-width: 2px; padding: 11px 15px; }
+        textarea { resize: vertical; min-height: 80px; }
+
+        /* M3 Switch */
+        .nsfw-container {
+            display: flex; align-items: center; justify-content: space-between;
+            background-color: var(--md-sys-color-surface-container); padding: 16px; border-radius: 16px;
+            margin-bottom: 24px; border: 1px solid var(--md-sys-color-outline-variant);
+        }
+        .nsfw-info { display: flex; flex-direction: column; }
+        .nsfw-title { font-size: 0.95rem; font-weight: 500; color: var(--md-sys-color-on-surface); }
+        .nsfw-desc { font-size: 0.8rem; color: var(--md-sys-color-on-surface-variant); }
+        
+        .switch { position: relative; display: inline-block; width: 52px; height: 32px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: var(--md-sys-color-surface-container-high); transition: .3s; border-radius: 16px;
+            border: 2px solid var(--md-sys-color-outline);
+        }
+        .slider:before {
+            position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px;
+            background-color: var(--md-sys-color-outline); transition: .3s; border-radius: 50%;
+        }
+        input:checked + .slider { background-color: var(--md-sys-color-primary); border-color: var(--md-sys-color-primary); }
+        input:checked + .slider:before { transform: translateX(20px); background-color: var(--md-sys-color-on-primary); }
+
+        .form-actions { display: flex; justify-content: flex-end; gap: 12px; margin-bottom: 24px; }
+
+        /* Save Slots */
+        .save-slots { display: flex; flex-direction: column; gap: 12px; }
+        .save-slot {
+            background-color: var(--md-sys-color-surface-container); border: 1px solid var(--md-sys-color-outline-variant);
+            padding: 16px; border-radius: 16px; display: flex; justify-content: space-between; align-items: center;
+        }
+        .save-slot-info { display: flex; flex-direction: column; gap: 2px; }
+        .save-slot-title { font-weight: 500; font-size: 1.05rem; color: var(--md-sys-color-primary); }
+        .save-slot-desc { font-size: 0.85rem; color: var(--md-sys-color-on-surface-variant); }
+        .save-slot-actions { display: flex; gap: 8px; }
+
+        /* Game Screen */
+        .game-screen { display: flex; flex-direction: column; height: 100%; }
+        .game-header {
+            padding: 16px 24px; background-color: var(--md-sys-color-surface-container-low);
+            border-bottom: 1px solid var(--md-sys-color-outline-variant);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .game-info h1 { font-size: 1.25rem; font-weight: 500; color: var(--md-sys-color-primary); }
+        .game-info p { font-size: 0.85rem; color: var(--md-sys-color-on-surface-variant); }
+
+        .control-bar {
+            display: flex; gap: 8px; padding: 10px 24px; background-color: var(--md-sys-color-surface);
+            border-bottom: 1px solid var(--md-sys-color-outline-variant); flex-wrap: wrap; justify-content: flex-end;
+        }
+
+        /* Stats Bar */
+        .stats-bar { display: flex; gap: 24px; padding: 16px 24px; background-color: var(--md-sys-color-surface-container-low); border-bottom: 1px solid var(--md-sys-color-outline-variant); }
+        .stat-item { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+        .stat-header { display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 500; color: var(--md-sys-color-on-surface-variant); }
+        .stat-track { height: 8px; background-color: var(--md-sys-color-surface-container-high); border-radius: 4px; overflow: hidden; }
+        .stat-fill { height: 100%; background-color: var(--md-sys-color-primary); transition: width 0.3s; border-radius: 4px; }
+        .stat-fill.love { background-color: #ffb4ab; }
+
+        /* Chat Log */
+        .story-log { flex: 1; padding: 24px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
+        .message-card { padding: 16px 20px; border-radius: 20px; max-width: 85%; }
+        .msg-ai { background-color: var(--md-sys-color-surface-container); border-top-left-radius: 4px; align-self: flex-start; border: 1px solid var(--md-sys-color-outline-variant); }
+        .msg-user { background-color: var(--md-sys-color-primary-container); color: var(--md-sys-color-on-primary-container); border-top-right-radius: 4px; align-self: flex-end; }
+        .msg-label { font-size: 0.75rem; font-weight: 500; margin-bottom: 6px; display: flex; justify-content: space-between; color: var(--md-sys-color-on-surface-variant); }
+        .msg-user .msg-label { color: var(--md-sys-color-on-primary-container); opacity: 0.8; }
+        
+        .action-text { color: var(--md-sys-color-on-surface-variant); font-style: italic; }
+
+        /* Input Area */
+        .input-area { padding: 16px 24px; background-color: var(--md-sys-color-surface-container-low); border-top: 1px solid var(--md-sys-color-outline-variant); display: flex; flex-direction: column; gap: 12px; }
+        .input-controls { display: flex; justify-content: space-between; }
+        .input-row { display: flex; gap: 12px; }
+        .input-row textarea { flex: 1; min-height: 52px; height: 52px; resize: none; border-radius: 26px; padding: 14px 22px; }
+        .send-btn { border-radius: 26px; padding: 0 24px; }
+
+        /* Modals */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; z-index: 100;
+        }
+        .modal {
+            background-color: var(--md-sys-color-surface-container); border: 1px solid var(--md-sys-color-outline-variant);
+            padding: 28px; border-radius: 28px; width: 90%; max-width: 440px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .modal h2 { margin-bottom: 8px; font-size: 1.35rem; font-weight: 500; color: var(--md-sys-color-primary); }
+        .modal p { color: var(--md-sys-color-on-surface-variant); font-size: 0.9rem; margin-bottom: 20px; }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; }
+
+        @media (max-width: 600px) {
+            .form-row { grid-template-columns: 1fr; }
+            .container { border: none; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    
+    <!-- SETUP SCREEN -->
+    <div id="setupScreen" class="setup-screen">
+        <div class="setup-header">
+            <div>
+                <h1 id="uiSetupTitle">Create Your Adventure</h1>
+                <p id="uiSetupSubtitle">Load a save, or fill in the details below to start anew!</p>
+            </div>
+            <div class="header-actions">
+                <button id="setupKeyBtn" class="btn-small">⚡ Model</button>
+                <button id="setupLangBtn" class="btn-small">🇬🇧 EN</button>
+            </div>
+        </div>
+
+        <form id="setupForm">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Player Name <span class="opt-badge" data-i18n="optBadge">Auto-generates if blank</span></label>
+                    <input type="text" id="playerNameInput" placeholder="e.g., Alex, Sarah...">
+                </div>
+                <div class="form-group">
+                    <label>Heroine Name <span class="opt-badge" data-i18n="optBadge">Auto-generates if blank</span></label>
+                    <input type="text" id="heroineNameInput" placeholder="e.g., Chloe, Elena...">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Your Personality & Looks <span class="opt-badge" data-i18n="optBadge">Auto-generates if blank</span></label>
+                    <input type="text" id="playerDescInput" placeholder="e.g., Sarcastic, tall, ambitious...">
+                </div>
+                <div class="form-group">
+                    <label>Heroine Personality & Looks <span class="opt-badge" data-i18n="optBadge">Auto-generates if blank</span></label>
+                    <input type="text" id="heroineDescInput" placeholder="e.g., Shy, artistic, quick-witted...">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Romance Tropes <span class="opt-badge" data-i18n="optBadge">Auto-generates if blank</span></label>
+                    <input type="text" id="romanceTypeInput" placeholder="e.g., Enemies to lovers, Fake dating...">
+                </div>
+                <div class="form-group">
+                    <label>Starting Scenario <span class="opt-badge" data-i18n="optBadge">Auto-generates if blank</span></label>
+                    <input type="text" id="scenarioInput" placeholder="e.g., Stuck in an elevator together...">
+                </div>
+            </div>
+            
+            <div class="nsfw-container">
+                <div class="nsfw-info">
+                    <span class="nsfw-title">NSFW & Mature Content</span>
+                    <span class="nsfw-desc">Permits explicit language and scenes if narrative escalates naturally.</span>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="nsfwToggle">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" id="surpriseBtn" class="btn secondary">🎲 Surprise Me</button>
+                <button type="submit" id="startBtn" class="btn primary">Start Adventure</button>
+            </div>
+        </form>
+
+        <div id="saveSlotsContainer" class="save-slots"></div>
+    </div>
+
+    <!-- GAME SCREEN -->
+    <div id="gameScreen" class="game-screen hidden">
+        <header class="game-header">
+            <div class="game-info">
+                <h1 id="headerTitle">Adventure</h1>
+                <p id="headerSubtitle"></p>
+            </div>
+        </header>
+
+        <div class="control-bar">
+            <button id="apiKeyBtn" class="btn-small">⚡ Model</button>
+            <button id="customPromptBtn" class="btn-small">📝 Custom Prompt</button>
+            <button id="restartBtn" class="btn-small danger">Restart</button>
+            <button id="menuBtn" class="btn-small secondary">Menu</button>
+            <button id="gameLangBtn" class="btn-small">🇬🇧 EN</button>
+        </div>
+
+        <div class="stats-bar">
+            <div class="stat-item">
+                <div class="stat-header">
+                    <span id="stat1Label">Like</span>
+                    <span id="stat1Value">0</span>
+                </div>
+                <div class="stat-track"><div id="stat1Bar" class="stat-fill"></div></div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-header">
+                    <span id="stat2Label">Love</span>
+                    <span id="stat2Value">0</span>
+                </div>
+                <div class="stat-track"><div id="stat2Bar" class="stat-fill love"></div></div>
+            </div>
+        </div>
+
+        <div id="storyLog" class="story-log"></div>
+
+        <div class="input-area">
+            <div class="input-controls">
+                <div>
+                    <button id="undoBtn" class="btn-small">↩ Undo</button>
+                    <button id="regenBtn" class="btn-small">↻ Regenerate</button>
+                </div>
+            </div>
+            <form id="actionForm" class="input-row">
+                <textarea id="userInput" placeholder="What do you do or say?"></textarea>
+                <button type="submit" id="sendBtn" class="btn primary send-btn">Act</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODALS -->
+    <div id="keyModal" class="modal-overlay hidden">
+        <div class="modal">
+            <h2 id="uiKeyModalTitle">AI Model Settings</h2>
+            <p id="uiKeyModalDesc">Select your preferred model. Provide an API key or leave blank for automatic free routing.</p>
+            
+            <label id="lblModelSelect" style="font-size:0.85rem; font-weight:500; color:var(--md-sys-color-on-surface-variant);">Model</label>
+            <select id="modelSelect" style="margin-top:6px; margin-bottom:16px;">
+                <option value="gemini-3.8-flash">Gemini 3.8 Flash</option>
+                <option value="gemini-3.5-flash-lite">Gemini 3.5 Flash-Lite</option>
+                <option value="deepseek-flash">DeepSeek 4.1 Flash</option>
+            </select>
+
+            <label id="lblApiKey" style="font-size:0.85rem; font-weight:500; color:var(--md-sys-color-on-surface-variant);">API Key (Google or DeepSeek)</label>
+            <input type="text" id="apiKeyInput" style="margin-top:6px;" placeholder="AIzaSy... or sk-...">
+            <div id="keyStatusMsg" style="font-size: 0.8rem; margin-top: 8px; color: var(--md-sys-color-primary);"></div>
+            
+            <div class="modal-actions">
+                <button id="clearKeyModalBtn" class="btn-small danger">Clear Key</button>
+                <div style="flex:1;"></div>
+                <button id="closeKeyModalBtn" class="btn secondary">Close</button>
+                <button id="saveKeyModalBtn" class="btn primary">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="customPromptModal" class="modal-overlay hidden">
+        <div class="modal">
+            <h2 id="uiCustomPromptTitle">Custom AI Rules</h2>
+            <p id="uiCustomPromptDesc">Add any specific instructions. These persist globally.</p>
+            <textarea id="customPromptInput" placeholder="e.g., 'Make the dialogue witty...'"></textarea>
+            <div class="modal-actions">
+                <button id="closeCustomPromptBtn" class="btn secondary">Close</button>
+                <button id="saveCustomPromptBtn" class="btn primary">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="confirmModal" class="modal-overlay hidden">
+        <div class="modal">
+            <h2 id="confirmTitle">Confirm</h2>
+            <p id="confirmDesc">Are you sure?</p>
+            <div class="modal-actions">
+                <button id="confirmCancelBtn" class="btn secondary">Cancel</button>
+                <button id="confirmOkBtn" class="btn danger">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    const MAX_SAVES = 5;
+    const STORAGE_KEY_API = "gemini_adventure_api_key_v5";
+    const STORAGE_KEY_MODEL = "gemini_adventure_model_v5";
+    const STORAGE_KEY_LANG = "gemini_adventure_lang_v2";
+    const STORAGE_KEY_PROMPT = "gemini_adventure_custom_prompt_v2";
+    const LOCAL_SAVES_KEY = "ai_adventure_saves_list_v1";
+
+    const I18N = {
+        en: {
+            langBtn: "🇬🇧 EN", setupTitle: "Create Your Adventure", setupSubtitle: "Load a save, or fill in the details below to start anew!",
+            optBadge: "Auto-generates if blank", surpriseBtn: "🎲 Surprise Me", startBtn: "Start Adventure", restartBtn: "Restart",
+            menuBtn: "Menu", undoBtn: "↩ Undo", regenBtn: "↻ Regenerate", phUserInput: "What do you do or say?", sendBtn: "Act",
+            youLabel: "YOU", storyLabel: "STORY", errorLabel: "ERROR", generatingScene: "*Generating scene...*",
+            defaultTraveler: "Traveler", defaultGenre: "Romance", adventureSuffix: " — Story", stat1Default: "Like", stat2Default: "Love",
+            keyModalTitle: "AI Model Settings", keyModalDesc: "Select your preferred model. Provide an API key or leave blank for automatic free routing.",
+            lblModelSelect: "Model", lblApiKey: "API Key (Google or DeepSeek)", phApiKey: "AIzaSy... or sk-...",
+            clearKeyBtn: "Clear Key", closeBtn: "Close", saveKeyBtn: "Save", cancelBtn: "Cancel", confirmBtn: "Confirm",
+            restartTitle: "Restart?", restartDesc: "Reset history and start over?", menuTitle: "Exit to Menu?", menuDesc: "Return to start screen?",
+            customKeyActive: "Custom API Key active", autoRoutingActive: "Automatic free routing active", clearedKeyMsg: "Cleared key.",
+            customPromptBtn: "📝 Custom Prompt", promptModalTitle: "Custom AI Rules", promptModalDesc: "Add any specific instructions.",
+            phCustomPrompt: "e.g., Make the dialogue witty...", savePromptBtn: "Save", loadBtn: "Load", deleteBtn: "Delete",
+            slotFullErr: "Save slots full! Delete a save first.", deleteSaveTitle: "Delete Save?", deleteSaveDesc: "Permanently remove this save?"
+        },
+        pl: {
+            langBtn: "🇵🇱 PL", setupTitle: "Stwórz Przygodę", setupSubtitle: "Wczytaj grę lub wypełnij szczegóły poniżej!",
+            optBadge: "Auto-generowane jeśli puste", surpriseBtn: "🎲 Zaskocz mnie", startBtn: "Rozpocznij Przygodę", restartBtn: "Restartuj",
+            menuBtn: "Menu", undoBtn: "↩ Cofnij", regenBtn: "↻ Ponów", phUserInput: "Co robisz lub mówisz?", sendBtn: "Działaj",
+            youLabel: "TY", storyLabel: "HISTORIA", errorLabel: "BŁĄD", generatingScene: "*Generowanie sceny...*",
+            defaultTraveler: "Wędrowiec", defaultGenre: "Romans", adventureSuffix: " — Historia", stat1Default: "Sympatia", stat2Default: "Miłość",
+            keyModalTitle: "Ustawienia Modelu AI", keyModalDesc: "Wybierz model. Podaj klucz API lub zostaw puste.",
+            lblModelSelect: "Model", lblApiKey: "Klucz API (Google lub DeepSeek)", phApiKey: "AIzaSy... lub sk-...",
+            clearKeyBtn: "Wyczyść", closeBtn: "Zamknij", saveKeyBtn: "Zapisz", cancelBtn: "Anuluj", confirmBtn: "Potwierdź",
+            restartTitle: "Restartować?", restartDesc: "Zresetować historię?", menuTitle: "Wrócić do Menu?", menuDesc: "Wrócić na start?",
+            customKeyActive: "Własny klucz API aktywny", autoRoutingActive: "Automatyczny darmowy routing aktywny", clearedKeyMsg: "Wyczyszczono.",
+            customPromptBtn: "📝 Własne Zasady", promptModalTitle: "Własne Zasady AI", promptModalDesc: "Dodaj instrukcje.",
+            phCustomPrompt: "np. Zwolnij tempo akcji...", savePromptBtn: "Zapisz", loadBtn: "Wczytaj", deleteBtn: "Usuń",
+            slotFullErr: "Brak miejsc!", deleteSaveTitle: "Usunąć?", deleteSaveDesc: "Trwale usunąć zapis?"
+        }
+    };
+
+    function resolveApiKey() { return localStorage.getItem(STORAGE_KEY_API) || ""; }
+    function resolveModel() { 
+        const s = localStorage.getItem(STORAGE_KEY_MODEL); 
+        return (s === "gemini-3.5-flash-lite" || s === "deepseek-flash") ? s : "gemini-3.8-flash"; 
+    }
+    function resolveLang() { return localStorage.getItem(STORAGE_KEY_LANG) === "pl" ? "pl" : "en"; }
+    let currentApiKey = resolveApiKey(); let currentModel = resolveModel(); let currentLang = resolveLang();
+    function t(key) { return I18N[currentLang]?.[key] || I18N.en[key] || key; }
+
+    let saves = []; let currentSaveIndex = -1; let gameState = null;
+    const ui = {
+        setupScreen: document.getElementById("setupScreen"), gameScreen: document.getElementById("gameScreen"),
+        setupForm: document.getElementById("setupForm"), saveSlotsContainer: document.getElementById("saveSlotsContainer"),
+        surpriseBtn: document.getElementById("surpriseBtn"), startBtn: document.getElementById("startBtn"),
+        storyLog: document.getElementById("storyLog"), actionForm: document.getElementById("actionForm"), userInput: document.getElementById("userInput"),
+        sendBtn: document.getElementById("sendBtn"), undoBtn: document.getElementById("undoBtn"), regenBtn: document.getElementById("regenBtn")
+    };
+
+    function applyTranslations() {
+        currentLang = resolveLang(); document.documentElement.lang = currentLang;
+        document.getElementById("setupLangBtn").textContent = t("langBtn");
+        document.getElementById("gameLangBtn").textContent = t("langBtn");
+        document.getElementById("uiSetupTitle").textContent = t("setupTitle");
+        document.getElementById("uiSetupSubtitle").textContent = t("setupSubtitle");
+        document.querySelectorAll('[data-i18n="optBadge"]').forEach(el => el.textContent = t("optBadge"));
+        ui.surpriseBtn.textContent = t("surpriseBtn"); ui.startBtn.textContent = t("startBtn");
+        document.getElementById("restartBtn").textContent = t("restartBtn"); document.getElementById("menuBtn").textContent = t("menuBtn");
+        ui.undoBtn.textContent = t("undoBtn"); ui.regenBtn.textContent = t("regenBtn"); ui.userInput.placeholder = t("phUserInput"); ui.sendBtn.textContent = t("sendBtn");
+        document.getElementById("uiKeyModalTitle").textContent = t("keyModalTitle"); document.getElementById("uiKeyModalDesc").textContent = t("keyModalDesc");
+        document.getElementById("lblModelSelect").textContent = t("lblModelSelect"); document.getElementById("lblApiKey").textContent = t("lblApiKey");
+        document.getElementById("apiKeyInput").placeholder = t("phApiKey");
+        document.getElementById("clearKeyModalBtn").textContent = t("clearKeyBtn"); document.getElementById("closeKeyModalBtn").textContent = t("closeBtn");
+        document.getElementById("saveKeyModalBtn").textContent = t("saveKeyBtn");
+        document.getElementById("confirmCancelBtn").textContent = t("cancelBtn"); document.getElementById("confirmOkBtn").textContent = t("confirmBtn");
+        document.getElementById("customPromptBtn").textContent = t("customPromptBtn");
+        document.getElementById("uiCustomPromptTitle").textContent = t("promptModalTitle"); document.getElementById("uiCustomPromptDesc").textContent = t("promptModalDesc");
+        document.getElementById("customPromptInput").placeholder = t("phCustomPrompt");
+        document.getElementById("closeCustomPromptBtn").textContent = t("closeBtn"); document.getElementById("saveCustomPromptBtn").textContent = t("savePromptBtn");
+        renderSaveSlots();
+    }
+
+    function toggleLanguage() { localStorage.setItem(STORAGE_KEY_LANG, currentLang === "en" ? "pl" : "en"); applyTranslations(); updateUI(); }
+    document.getElementById("setupLangBtn").addEventListener("click", toggleLanguage); document.getElementById("gameLangBtn").addEventListener("click", toggleLanguage);
+
+    function updateBadgeUI() {
+        currentModel = resolveModel();
+        let shortName = "3.8 Flash";
+        if (currentModel === "gemini-3.5-flash-lite") shortName = "3.5 Flash-Lite";
+        if (currentModel === "deepseek-flash") shortName = "DS 4.1 Flash";
+        document.getElementById("setupKeyBtn").textContent = `⚡ ${shortName}`;
+        document.getElementById("apiKeyBtn").textContent = `⚡ ${shortName}`;
+    }
+
+    function formatText(rawText) {
+        const escaped = String(rawText || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        return escaped.replace(/\*([\s\S]*?)\*/g, '<span class="action-text">$1</span>').replace(/\n/g, "<br>");
+    }
+
+    function updateUI() {
+        updateBadgeUI();
+        if (!gameState || !gameState.active) {
+            ui.setupScreen.classList.remove("hidden"); ui.gameScreen.classList.add("hidden"); renderSaveSlots(); return;
+        }
+        ui.setupScreen.classList.add("hidden"); ui.gameScreen.classList.remove("hidden");
+        
+        document.getElementById("headerTitle").textContent = `${gameState.config?.playerName || t("defaultTraveler")}${t("adventureSuffix")}`;
+        document.getElementById("headerSubtitle").textContent = `${gameState.config?.romanceType || t("defaultGenre")} • ${gameState.config?.heroineName || ""}`;
+        
+        document.getElementById("stat1Label").textContent = t("stat1Default"); document.getElementById("stat2Label").textContent = t("stat2Default");
+        document.getElementById("stat1Value").textContent = gameState.stat1; document.getElementById("stat2Value").textContent = gameState.stat2;
+        document.getElementById("stat1Bar").style.width = `${gameState.stat1}%`; document.getElementById("stat2Bar").style.width = `${gameState.stat2}%`;
+        
+        ui.storyLog.innerHTML = "";
+        gameState.history.forEach(item => {
+            if (item.hiddenPrompt) return;
+            const card = document.createElement("div"); card.className = `message-card ${item.role === "user" ? "msg-user" : "msg-ai"}`;
+            card.innerHTML = `<div class="msg-label"><span>${item.role === "user" ? t("youLabel") : t("storyLabel")}</span><span style="font-size:0.65rem; opacity:0.6;">${item.modelUsed ? item.modelUsed.replace('gemini-','') : ''}</span></div>
+                              <div>${formatText(item.text)}</div>`;
+            ui.storyLog.appendChild(card);
+        });
+        ui.storyLog.scrollTop = ui.storyLog.scrollHeight;
+        const visible = gameState.history.filter(h => !h.hiddenPrompt);
+        ui.undoBtn.disabled = visible.length <= 1; ui.regenBtn.disabled = visible.length === 0;
+    }
+
+    function loadAllSaves() { try { saves = JSON.parse(localStorage.getItem(LOCAL_SAVES_KEY)) || []; } catch(e) { saves = []; } }
+    function writeAllSaves() { localStorage.setItem(LOCAL_SAVES_KEY, JSON.stringify(saves)); }
+    function saveActiveGame() {
+        if (currentSaveIndex >= 0 && currentSaveIndex < saves.length) saves[currentSaveIndex] = gameState;
+        else { saves.push(gameState); currentSaveIndex = saves.length - 1; }
+        writeAllSaves();
+    }
+
+    function renderSaveSlots() {
+        ui.saveSlotsContainer.innerHTML = "";
+        saves.forEach((save, i) => {
+            const slot = document.createElement("div"); slot.className = "save-slot";
+            slot.innerHTML = `<div class="save-slot-info"><span class="save-slot-title">${save.config?.playerName||t("defaultTraveler")}</span>
+                              <span class="save-slot-desc">${save.config?.romanceType||t("defaultGenre")} • ${save.history.length} turns</span></div>
+                              <div class="save-slot-actions">
+                                <button class="btn-small" onclick="currentSaveIndex=${i}; gameState=saves[${i}]; updateUI();">${t("loadBtn")}</button>
+                                <button class="btn-small danger" onclick="openConfirm(t('deleteSaveTitle'), t('deleteSaveDesc'), () => {saves.splice(${i},1); writeAllSaves(); renderSaveSlots();})">${t("deleteBtn")}</button>
+                              </div>`;
+            ui.saveSlotsContainer.appendChild(slot);
+        });
+    }
+
+    function buildSystemPrompt() {
+        const c = gameState.config || {}; const isPL = currentLang === "pl";
+        const nsfw = gameState.nsfw ? "\n[NSFW DIRECTIVE: Explicit adult language, profanity, and mature themes PERMITTED. Let narrative escalate naturally.]" : "\n[NSFW DIRECTIVE: OFF. Keep language clean (PG-13) and fade-to-black.]";
+        const turnRule = gameState.history.length <= 1 ? "Write a 2-3 paragraph opening. IT MUST END WITH THE HEROINE SPEAKING DIRECTLY TO THE PLAYER." : "Keep response extremely brief (1-2 short paragraphs). Avoid heavy descriptions. React and hand agency back.";
+        const base = `You are a Game Master running a grounded, contemporary romance roleplay. NO magic, NO sci-fi.
+${isPL ? "Pisz CAŁĄ narrację po polsku." : "Write in English."}
+${nsfw}
+
+[CANON DETAILS - AI MUST INVENT BLANKS]:
+- Player: ${c.playerName||"[AI TO INVENT]"} (${c.playerDesc||"[AI TO INVENT]"})
+- Heroine: ${c.heroineName||"[AI TO INVENT]"} (${c.heroineDesc||"[AI TO INVENT]"})
+- Romance Tropes: ${c.romanceType||"[AI TO INVENT]"}
+- Scenario: ${c.scenario||"[AI TO INVENT]"}
+
+[CURRENT RELATIONSHIP DYNAMICS - CRITICAL DIRECTIVE]
+- Like (Friendship): ${gameState.stat1}/100
+- Love (Attraction): ${gameState.stat2}/100
+Characters MUST act strictly according to these stats. If low, keep it distant/professional. If high, show affection.
+
+Gameplay Rules:
+1. Write in second person. ${turnRule}
+2. [CRITICAL FORMATTING]: Wrap EVERY SINGLE NON-DIALOGUE sentence (actions, descriptions, thoughts) in single asterisks like *this*. Spoken dialogue MUST be plain text with quotes like "this", no asterisks around it.
+3. End every turn so the player can act.
+4. On the VERY FIRST turn, output a stat1Delta and stat2Delta to set the initial absolute values (0-100) based on the starting scenario.
+5. At the VERY END of EVERY response, append this hidden block:
+||STATS:{"stat1Delta": 0, "stat2Delta": 0, "playerName": "${c.playerName||""}", "heroineName": "${c.heroineName||""}", "playerDesc": "${c.playerDesc||""}", "heroineDesc": "${c.heroineDesc||""}", "romanceType": "${c.romanceType||""}", "scenario": "${c.scenario||""}"}||`;
+        const custom = localStorage.getItem(STORAGE_KEY_PROMPT) || "";
+        return custom ? `${base}\n\n[CRITICAL CUSTOM RULES]:\n${custom}` : base;
+    }
+
+    function cleanAIResponse(raw) { return String(raw).replace(/<think>[\s\S]*?<\/think>/gi, "").trim(); }
+
+    async function callDirectGoogleGemini(prompt, contents, key) {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${encodeURIComponent(key)}`;
+        const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ systemInstruction: { parts: [{ text: prompt }] }, contents, generationConfig: { maxOutputTokens: 250 } }) });
+        if (!res.ok) throw new Error(`API Error ${res.status}`);
+        return cleanAIResponse((await res.json())?.candidates?.[0]?.content?.parts?.[0]?.text);
+    }
+    
+    async function callDirectDeepSeek(prompt, contents, key) {
+        const msgs = [{ role: "system", content: prompt }, ...contents.map(c => ({ role: c.role==="model"?"assistant":"user", content: c.parts[0].text }))];
+        const res = await fetch("https://api.deepseek.com/chat/completions", { method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${key}` }, body: JSON.stringify({ model: "deepseek-chat", messages: msgs, max_tokens: 250 }) });
+        if (!res.ok) throw new Error(`API Error ${res.status}`);
+        return cleanAIResponse((await res.json())?.choices?.[0]?.message?.content);
+    }
+
+    async function callKeylessPublicCascade(prompt, contents) {
+        const msgs = [{ role: "system", content: prompt }, ...contents.map(c => ({ role: c.role==="model"?"assistant":"user", content: c.parts[0].text }))];
+        let attempts = 0;
+        while (attempts < 3) {
+            try {
+                const res = await fetch("https://text.pollinations.ai/openai", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ model: "openai", messages: msgs, seed: Math.floor(Math.random() * 1000000) })
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data?.choices?.[0]?.message?.content) {
+                        return cleanAIResponse(data.choices[0].message.content);
+                    }
+                }
+            } catch (e) {
+                console.warn("Free API attempt " + (attempts + 1) + " failed", e);
+            }
+            attempts++;
+            if (attempts < 3) await new Promise(r => setTimeout(r, 1000));
+        }
+        throw new Error(currentLang === "pl" ? 
+            "Darmowe publiczne serwery są obecnie przeciążone. Uzyskaj darmowy klucz API na aistudio.google.com i dodaj go w Ustawieniach Modelu (⚡) dla natychmiastowego, niezawodnego dostępu." : 
+            "Free public servers are currently overloaded. Please get a free API key at aistudio.google.com and add it in the Model Settings (⚡) for instant, reliable access.");
+    }
+
+    async function callGeminiAPI(contents) {
+        currentModel = resolveModel(); currentApiKey = resolveApiKey();
+        const truncated = contents.slice(-15);
+        
+        if (currentModel === "deepseek-flash" && !currentApiKey) {
+            throw new Error("[DeepSeek] API Key required. Please get one from platform.deepseek.com and add it in Model Settings.");
+        }
+
+        if (currentApiKey) {
+            try {
+                if (currentModel === "deepseek-flash") return await callDirectDeepSeek(buildSystemPrompt(), truncated, currentApiKey);
+                return await callDirectGoogleGemini(buildSystemPrompt(), truncated, currentApiKey);
+            } catch(e) { console.warn(e); }
+        }
+        return await callKeylessPublicCascade(buildSystemPrompt(), truncated);
+    }
+
+    function parseStats(raw) {
+        let clean = raw;
+        const match = raw.match(/\|\|STATS:(\{[\s\S]*?\})\|\|/);
+        if (match) {
+            clean = raw.replace(match[0], "").trim();
+            try {
+                const s = JSON.parse(match[1]);
+                if (gameState.config) {
+                    ["playerName","playerDesc","heroineName","heroineDesc","romanceType","scenario"].forEach(k => {
+                        if (!gameState.config[k] && s[k]) gameState.config[k] = s[k];
+                    });
+                }
+                gameState.stat1 = Math.max(0, Math.min(100, gameState.stat1 + (Number(s.stat1Delta)||0)));
+                gameState.stat2 = Math.max(0, Math.min(100, gameState.stat2 + (Number(s.stat2Delta)||0)));
+            } catch(e){}
+        }
+        return clean;
+    }
+
+    async function generateTurn() {
+        ui.sendBtn.disabled = ui.userInput.disabled = ui.undoBtn.disabled = ui.regenBtn.disabled = true;
+        const load = document.createElement("div"); load.className = "message-card msg-ai";
+        load.innerHTML = `<div class="msg-label"><span>${t("storyLabel")}</span></div><div class="action-text">${t("generatingScene")}</div>`;
+        ui.storyLog.appendChild(load); ui.storyLog.scrollTop = ui.storyLog.scrollHeight;
+        
+        try {
+            const reply = parseStats(await callGeminiAPI(gameState.history.map(h => ({ role: h.role, parts: [{ text: h.text }] }))));
+            gameState.history.push({ role: "model", text: reply, stat1: gameState.stat1, stat2: gameState.stat2, modelUsed: currentModel });
+            saveActiveGame(); updateUI();
+        } catch(e) {
+            load.innerHTML = `<div class="msg-label"><span>${t("errorLabel")}</span></div><div>${formatText(e.message)}</div>`;
+        } finally {
+            ui.sendBtn.disabled = ui.userInput.disabled = false; ui.userInput.focus();
+            const vis = gameState.history.filter(h => !h.hiddenPrompt);
+            ui.undoBtn.disabled = vis.length <= 1; ui.regenBtn.disabled = vis.length === 0;
+        }
+    }
+
+    async function startNewScenario(isRestart=false) {
+        if (!isRestart) {
+            gameState = { active: true, stat1: 0, stat2: 0, history: [],
+                nsfw: document.getElementById("nsfwToggle").checked,
+                config: {
+                    playerName: document.getElementById("playerNameInput").value.trim(),
+                    playerDesc: document.getElementById("playerDescInput").value.trim(),
+                    heroineName: document.getElementById("heroineNameInput").value.trim(),
+                    heroineDesc: document.getElementById("heroineDescInput").value.trim(),
+                    romanceType: document.getElementById("romanceTypeInput").value.trim(),
+                    scenario: document.getElementById("scenarioInput").value.trim()
+                }
+            };
+        } else {
+            gameState = { active: true, stat1: 0, stat2: 0, history: [], nsfw: gameState.nsfw, config: gameState.config };
+        }
+        gameState.history.push({ role: "user", hiddenPrompt: true, stat1: 0, stat2: 0, text: currentLang==="pl" ? "Rozpocznij przygodę. Wygeneruj otwarcie i zainicjuj JSON stats." : "Start the adventure. Generate opening and init JSON stats." });
+        saveActiveGame(); updateUI(); await generateTurn();
+    }
+
+    ui.setupForm.addEventListener("submit", (e) => { e.preventDefault(); currentSaveIndex = saves.length; startNewScenario(); });
+    ui.surpriseBtn.addEventListener("click", () => { ui.setupForm.reset(); currentSaveIndex = saves.length; startNewScenario(); });
+    ui.actionForm.addEventListener("submit", async (e) => {
+        e.preventDefault(); const text = ui.userInput.value.trim(); if (!text) return;
+        ui.userInput.value = ""; gameState.history.push({ role: "user", text, stat1: gameState.stat1, stat2: gameState.stat2 });
+        saveActiveGame(); updateUI(); await generateTurn();
+    });
+
+    ui.undoBtn.addEventListener("click", () => {
+        if (gameState.history.length <= 2) return;
+        if (gameState.history[gameState.history.length-1].role === "model") gameState.history.pop();
+        if (gameState.history[gameState.history.length-1].role === "user") gameState.history.pop();
+        const last = gameState.history[gameState.history.length-1]; if(last) { gameState.stat1 = last.stat1||0; gameState.stat2 = last.stat2||0; }
+        saveActiveGame(); updateUI();
+    });
+    ui.regenBtn.addEventListener("click", async () => {
+        if (gameState.history.length === 0) return;
+        if (gameState.history[gameState.history.length-1].role === "model") gameState.history.pop();
+        saveActiveGame(); updateUI(); await generateTurn();
+    });
+
+    const confirmModal = document.getElementById("confirmModal"); let pendingAction = null;
+    function openConfirm(t, d, cb) { document.getElementById("confirmTitle").textContent = t; document.getElementById("confirmDesc").textContent = d; pendingAction = cb; confirmModal.classList.remove("hidden"); }
+    document.getElementById("confirmCancelBtn").addEventListener("click", () => confirmModal.classList.add("hidden"));
+    document.getElementById("confirmOkBtn").addEventListener("click", () => { confirmModal.classList.add("hidden"); if(pendingAction) pendingAction(); });
+
+    document.getElementById("restartBtn").addEventListener("click", () => openConfirm(t("restartTitle"), t("restartDesc"), () => startNewScenario(true)));
+    document.getElementById("menuBtn").addEventListener("click", () => openConfirm(t("menuTitle"), t("menuDesc"), () => { gameState = null; currentSaveIndex = -1; updateUI(); }));
+
+    const keyModal = document.getElementById("keyModal");
+    function openKeyModal() {
+        document.getElementById("apiKeyInput").value = resolveApiKey(); document.getElementById("modelSelect").value = resolveModel();
+        document.getElementById("keyStatusMsg").textContent = resolveApiKey() ? t("customKeyActive") : t("autoRoutingActive");
+        keyModal.classList.remove("hidden");
+    }
+    document.getElementById("setupKeyBtn").addEventListener("click", openKeyModal); document.getElementById("apiKeyBtn").addEventListener("click", openKeyModal);
+    document.getElementById("closeKeyModalBtn").addEventListener("click", () => keyModal.classList.add("hidden"));
+    document.getElementById("clearKeyModalBtn").addEventListener("click", () => { localStorage.removeItem(STORAGE_KEY_API); document.getElementById("apiKeyInput").value = ""; updateBadgeUI(); });
+    document.getElementById("saveKeyModalBtn").addEventListener("click", () => {
+        localStorage.setItem(STORAGE_KEY_MODEL, document.getElementById("modelSelect").value);
+        const val = document.getElementById("apiKeyInput").value.trim();
+        if (val) localStorage.setItem(STORAGE_KEY_API, val); else localStorage.removeItem(STORAGE_KEY_API);
+        updateBadgeUI(); keyModal.classList.add("hidden");
+    });
+
+    const promptModal = document.getElementById("customPromptModal");
+    document.getElementById("customPromptBtn").addEventListener("click", () => { document.getElementById("customPromptInput").value = localStorage.getItem(STORAGE_KEY_PROMPT) || ""; promptModal.classList.remove("hidden"); });
+    document.getElementById("closeCustomPromptBtn").addEventListener("click", () => promptModal.classList.add("hidden"));
+    document.getElementById("saveCustomPromptBtn").addEventListener("click", () => { localStorage.setItem(STORAGE_KEY_PROMPT, document.getElementById("customPromptInput").value.trim()); promptModal.classList.add("hidden"); });
+
+    loadAllSaves(); applyTranslations(); updateUI();
+</script>
+</body>
+</html>
