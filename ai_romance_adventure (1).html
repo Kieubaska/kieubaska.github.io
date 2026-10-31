@@ -1,0 +1,1285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AI Romance Adventure</title>
+    <style>
+        :root {
+            --bg-amoled: #000000;
+            --glass-surface: rgba(15, 15, 15, 0.65);
+            --glass-layer: rgba(255, 255, 255, 0.04);
+            --glass-layer-hover: rgba(255, 255, 255, 0.09);
+            --glass-input: rgba(10, 10, 10, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-border-bright: rgba(255, 255, 255, 0.28);
+            --glass-highlight: inset 0 1px 0 0 rgba(255, 255, 255, 0.18);
+            --text-main: #ffffff;
+            --text-muted: rgba(255, 255, 255, 0.52);
+            --accent-primary: #ffffff;
+            --accent-silver: #c0c0c0;
+            --accent-gradient: linear-gradient(135deg, #ffffff 0%, #dcdcdc 50%, #b8b8b8 100%);
+            --accent-silver-gradient: linear-gradient(135deg, #d8d8d8 0%, #9e9e9e 100%);
+            --accent-danger: linear-gradient(135deg, #3a1c1c 0%, #241010 100%);
+            --spring-easing: cubic-bezier(0.22, 1, 0.36, 1);
+            --message-spring: cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-amoled);
+            color: var(--text-main);
+            line-height: 1.5;
+            display: flex;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 840px;
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            background: var(--glass-surface);
+            backdrop-filter: blur(32px) saturate(180%);
+            -webkit-backdrop-filter: blur(32px) saturate(180%);
+            border-top: 1px solid rgba(255, 255, 255, 0.18);
+            box-shadow: 
+                0 28px 70px rgba(0, 0, 0, 0.95),
+                var(--glass-highlight);
+            overflow: hidden;
+            transition: all 0.35s var(--spring-easing);
+        }
+
+        @media (min-width: 768px) {
+            body {
+                padding: 20px;
+            }
+            .container {
+                height: calc(100dvh - 40px);
+                max-height: 920px;
+                border-radius: 30px;
+                border: 1px solid var(--glass-border);
+                border-top: 1px solid rgba(255, 255, 255, 0.22);
+            }
+        }
+
+        .hidden { display: none !important; }
+
+        /* Keyframe Animations */
+        @keyframes screenFadeSlide {
+            from {
+                opacity: 0;
+                transform: translateY(14px) scale(0.992);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @keyframes staggerRise {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes messageGlide {
+            from {
+                opacity: 0;
+                transform: translateY(14px) scale(0.975);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        @keyframes statShimmer {
+            0% { transform: translateX(-120%) skewX(-20deg); }
+            100% { transform: translateX(220%) skewX(-20deg); }
+        }
+
+        @keyframes overlayFade {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes modalSpring {
+            from {
+                opacity: 0;
+                transform: scale(0.94) translateY(8px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        @keyframes scenePulse {
+            0%, 100% {
+                opacity: 0.45;
+                border-color: rgba(255, 255, 255, 0.08);
+                box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+            }
+            50% {
+                opacity: 0.95;
+                border-color: rgba(255, 255, 255, 0.28);
+                box-shadow: 0 4px 22px rgba(255, 255, 255, 0.07);
+            }
+        }
+
+        /* Custom Monochrome Scrollbars */
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.18);
+            border-radius: 999px;
+            transition: background 0.2s ease;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.35);
+        }
+
+        /* Liquid Glass Buttons & Micro-Interactions */
+        .btn {
+            padding: 11px 20px;
+            border-radius: 16px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            cursor: pointer;
+            border: 1px solid var(--glass-border);
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: var(--glass-highlight), 0 6px 18px rgba(0, 0, 0, 0.5);
+            transition: 
+                transform 0.22s var(--spring-easing), 
+                background 0.25s ease, 
+                border-color 0.25s ease, 
+                box-shadow 0.25s ease, 
+                opacity 0.2s ease;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+        .btn:hover:not(:disabled) {
+            transform: translateY(-1px);
+            border-color: var(--glass-border-bright);
+        }
+        .btn:active:not(:disabled) {
+            transform: scale(0.96);
+        }
+        .btn:disabled, .btn-small:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+        }
+        .btn.primary {
+            background: var(--accent-gradient);
+            color: #000000;
+            border-color: rgba(255, 255, 255, 0.65);
+            box-shadow: 
+                inset 0 1px 1px rgba(255, 255, 255, 0.9),
+                0 8px 22px rgba(255, 255, 255, 0.14);
+        }
+        .btn.primary:hover:not(:disabled) {
+            box-shadow: 
+                inset 0 1px 1px #ffffff,
+                0 10px 28px rgba(255, 255, 255, 0.24);
+            filter: brightness(1.04);
+        }
+        .btn.secondary {
+            background: var(--glass-layer);
+            color: var(--text-main);
+        }
+        .btn.secondary:hover:not(:disabled) {
+            background: var(--glass-layer-hover);
+            box-shadow: var(--glass-highlight), 0 8px 22px rgba(0, 0, 0, 0.7);
+        }
+        .btn.danger {
+            background: rgba(255, 255, 255, 0.08);
+            color: #ffffff;
+            border-color: rgba(255, 255, 255, 0.22);
+            box-shadow: var(--glass-highlight), 0 6px 18px rgba(0, 0, 0, 0.6);
+        }
+        .btn.danger:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.16);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .btn-small {
+            padding: 7px 14px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            border-radius: 999px;
+            border: 1px solid var(--glass-border);
+            border-top: 1px solid rgba(255, 255, 255, 0.18);
+            background: var(--glass-layer);
+            color: var(--text-main);
+            cursor: pointer;
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            box-shadow: var(--glass-highlight), 0 3px 10px rgba(0, 0, 0, 0.4);
+            transition: 
+                transform 0.22s var(--spring-easing), 
+                background 0.2s ease, 
+                border-color 0.2s ease,
+                box-shadow 0.2s ease;
+        }
+        .btn-small:hover:not(:disabled) {
+            transform: translateY(-1px);
+            background: var(--glass-layer-hover);
+            border-color: var(--glass-border-bright);
+            box-shadow: var(--glass-highlight), 0 5px 14px rgba(255, 255, 255, 0.06);
+        }
+        .btn-small:active:not(:disabled) {
+            transform: scale(0.96);
+        }
+        .btn-small.danger {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.15);
+            color: var(--accent-silver);
+        }
+        .btn-small.danger:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.14);
+            border-color: rgba(255, 255, 255, 0.35);
+            color: #ffffff;
+        }
+
+        /* Setup Screen & Staggered Entrances */
+        .setup-screen {
+            padding: 26px;
+            overflow-y: auto;
+            height: 100%;
+            background-color: var(--bg-amoled);
+            animation: screenFadeSlide 0.42s var(--spring-easing) both;
+        }
+        .setup-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 24px;
+            padding-bottom: 18px;
+            border-bottom: 1px solid var(--glass-border);
+            animation: staggerRise 0.4s var(--spring-easing) 0.03s both;
+        }
+        .setup-header h1 {
+            font-size: 1.85rem;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+            background: linear-gradient(135deg, #ffffff 0%, #d4d4d4 55%, #8c8c8c 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 4px;
+        }
+        .setup-header p {
+            color: var(--text-muted);
+            font-size: 0.92rem;
+        }
+        .header-actions {
+            display: flex;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 16px;
+            animation: staggerRise 0.42s var(--spring-easing) both;
+        }
+        #setupForm .form-row:nth-of-type(1) { animation-delay: 0.07s; }
+        #setupForm .form-row:nth-of-type(2) { animation-delay: 0.12s; }
+        #setupForm .form-row:nth-of-type(3) { animation-delay: 0.17s; }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 7px;
+        }
+        .form-group label {
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.9);
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .opt-badge {
+            font-size: 0.68rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            padding: 2px 8px;
+            border-radius: 999px;
+        }
+
+        /* Inputs, Textareas & Custom Monochrome Select Dropdowns */
+        input[type="text"], textarea, select {
+            width: 100%;
+            padding: 12px 15px;
+            border-radius: 14px;
+            background: var(--glass-input);
+            color: var(--text-main);
+            border: 1px solid var(--glass-border);
+            border-top: 1px solid rgba(255, 255, 255, 0.14);
+            box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.75), 0 1px 0 rgba(255, 255, 255, 0.04);
+            font-family: inherit;
+            font-size: 0.94rem;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            transition: 
+                border-color 0.25s var(--spring-easing), 
+                box-shadow 0.25s var(--spring-easing), 
+                background-color 0.25s ease,
+                transform 0.2s var(--spring-easing);
+        }
+        select {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            padding-right: 40px;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 14px center;
+            background-size: 15px;
+            cursor: pointer;
+        }
+        select option {
+            background-color: #000000;
+            color: #ffffff;
+            padding: 10px;
+        }
+        input::placeholder, textarea::placeholder {
+            color: rgba(255, 255, 255, 0.3);
+        }
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            background-color: rgba(18, 18, 18, 0.9);
+            border-color: rgba(255, 255, 255, 0.45);
+            box-shadow: 
+                0 0 0 3px rgba(255, 255, 255, 0.12),
+                inset 0 1px 2px rgba(0, 0, 0, 0.6);
+        }
+        textarea {
+            resize: vertical;
+            min-height: 84px;
+        }
+
+        /* Custom Monochrome Checkbox */
+        .nsfw-toggle {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 18px 0 22px;
+            padding: 12px 16px;
+            border-radius: 16px;
+            background: var(--glass-layer);
+            border: 1px solid var(--glass-border);
+            border-top: 1px solid rgba(255, 255, 255, 0.16);
+            box-shadow: var(--glass-highlight);
+            font-size: 0.88rem;
+            color: rgba(255, 255, 255, 0.82);
+            cursor: pointer;
+            transition: background 0.25s ease, border-color 0.25s ease, transform 0.2s var(--spring-easing);
+            animation: staggerRise 0.42s var(--spring-easing) 0.22s both;
+        }
+        .nsfw-toggle:hover {
+            background: var(--glass-layer-hover);
+            border-color: var(--glass-border-bright);
+            transform: translateY(-1px);
+        }
+        .nsfw-toggle input[type="checkbox"] {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 6px;
+            background: rgba(0, 0, 0, 0.75);
+            border: 1px solid rgba(255, 255, 255, 0.28);
+            cursor: pointer;
+            flex-shrink: 0;
+            position: relative;
+            transition: all 0.2s var(--spring-easing);
+        }
+        .nsfw-toggle input[type="checkbox"]:checked {
+            background: #ffffff;
+            border-color: #ffffff;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+        }
+        .nsfw-toggle input[type="checkbox"]:checked::after {
+            content: "";
+            position: absolute;
+            left: 6px;
+            top: 2px;
+            width: 5px;
+            height: 10px;
+            border: solid #000000;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 8px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--glass-border);
+            animation: staggerRise 0.42s var(--spring-easing) 0.26s both;
+        }
+
+        .save-slots {
+            margin-top: 22px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .save-slot {
+            background: var(--glass-layer);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border: 1px solid var(--glass-border);
+            border-top: 1px solid rgba(255, 255, 255, 0.16);
+            box-shadow: var(--glass-highlight), 0 8px 20px rgba(0, 0, 0, 0.5);
+            padding: 14px 18px;
+            border-radius: 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            animation: staggerRise 0.4s var(--spring-easing) both;
+            transition: transform 0.22s var(--spring-easing), background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+        }
+        .save-slot:hover {
+            background: var(--glass-layer-hover);
+            border-color: var(--glass-border-bright);
+            transform: translateY(-1px);
+            box-shadow: var(--glass-highlight), 0 12px 26px rgba(0, 0, 0, 0.75);
+        }
+        .save-slot-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .save-slot-title {
+            font-weight: 600;
+            font-size: 0.98rem;
+            color: #ffffff;
+        }
+        .save-slot-desc {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+        .save-slot-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        /* Game Screen */
+        .game-screen {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            background-color: var(--bg-amoled);
+            animation: screenFadeSlide 0.42s var(--spring-easing) both;
+        }
+
+        /* Frosted Header */
+        .game-header {
+            padding: 16px 22px;
+            background: var(--glass-surface);
+            backdrop-filter: blur(32px) saturate(180%);
+            -webkit-backdrop-filter: blur(32px) saturate(180%);
+            border-bottom: 1px solid var(--glass-border);
+            box-shadow: var(--glass-highlight);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .game-info h1 {
+            font-size: 1.22rem;
+            font-weight: 700;
+            letter-spacing: -0.015em;
+            background: linear-gradient(135deg, #ffffff 20%, #b8b8b8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 2px;
+        }
+        .game-info p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        /* Neat Control Bar */
+        .control-bar {
+            display: flex;
+            gap: 8px;
+            padding: 10px 22px;
+            background: rgba(8, 8, 8, 0.75);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--glass-border);
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        /* Liquid Stats Bar & Shimmer */
+        .stats-bar {
+            display: flex;
+            gap: 22px;
+            padding: 12px 22px;
+            background: rgba(12, 12, 12, 0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--glass-border);
+        }
+        .stat-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.78rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--text-muted);
+        }
+        .stat-track {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 999px;
+            overflow: hidden;
+            border: 1px solid var(--glass-border);
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.85);
+            position: relative;
+        }
+        .stat-fill {
+            height: 100%;
+            background: var(--accent-gradient);
+            border-radius: 999px;
+            box-shadow: 0 0 12px rgba(255, 255, 255, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+            transition: width 0.6s var(--spring-easing);
+            position: relative;
+            overflow: hidden;
+        }
+        .stat-fill::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 45%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.65), transparent);
+            animation: statShimmer 3.6s infinite ease-in-out;
+        }
+
+        /* Chat Log & Message Physics */
+        .story-log {
+            flex: 1;
+            padding: 22px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            scroll-behavior: smooth;
+        }
+        .message-card {
+            padding: 14px 18px;
+            border-radius: 20px;
+            max-width: 88%;
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--glass-border);
+            border-top: 1px solid rgba(255, 255, 255, 0.16);
+            box-shadow: var(--glass-highlight), 0 8px 24px rgba(0, 0, 0, 0.6);
+            font-size: 0.96rem;
+            line-height: 1.58;
+            transition: border-color 0.25s ease, transform 0.2s var(--spring-easing);
+        }
+        .message-card.msg-enter {
+            animation: messageGlide 0.38s var(--message-spring) both;
+        }
+        .message-card.loading-pulse {
+            animation: messageGlide 0.32s var(--message-spring) both, scenePulse 2s infinite ease-in-out;
+        }
+        .msg-ai {
+            background: rgba(18, 18, 18, 0.72);
+            border-left: 3px solid #ffffff;
+            border-top-left-radius: 6px;
+            align-self: flex-start;
+        }
+        .msg-user {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.11) 0%, rgba(255, 255, 255, 0.04) 100%);
+            border-color: rgba(255, 255, 255, 0.16);
+            border-right: 3px solid var(--accent-silver);
+            border-top-right-radius: 6px;
+            align-self: flex-end;
+        }
+        .msg-label {
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+            color: var(--text-muted);
+        }
+
+        .action-text {
+            color: var(--accent-silver);
+            font-style: italic;
+        }
+
+        /* Input Area */
+        .input-area {
+            padding: 14px 20px 18px;
+            background: var(--glass-surface);
+            backdrop-filter: blur(32px) saturate(180%);
+            -webkit-backdrop-filter: blur(32px) saturate(180%);
+            border-top: 1px solid rgba(255, 255, 255, 0.18);
+            box-shadow: var(--glass-highlight);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .input-controls {
+            display: flex;
+            justify-content: space-between;
+        }
+        .input-controls > div {
+            display: flex;
+            gap: 8px;
+        }
+        .input-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .input-row textarea {
+            flex: 1;
+            min-height: 48px;
+            height: 48px;
+            resize: none;
+            border-radius: 24px;
+            padding: 12px 18px;
+            line-height: 1.35;
+        }
+        .send-btn {
+            border-radius: 24px;
+            height: 48px;
+            padding: 0 24px;
+            flex-shrink: 0;
+        }
+
+        /* Frosted Modals */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.72);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            padding: 16px;
+            animation: overlayFade 0.22s ease both;
+        }
+        .modal {
+            background: rgba(15, 15, 15, 0.82);
+            backdrop-filter: blur(32px) saturate(180%);
+            -webkit-backdrop-filter: blur(32px) saturate(180%);
+            border: 1px solid var(--glass-border);
+            border-top: 1px solid rgba(255, 255, 255, 0.24);
+            box-shadow: 
+                0 24px 60px rgba(0, 0, 0, 0.9),
+                var(--glass-highlight);
+            padding: 26px;
+            border-radius: 26px;
+            width: 100%;
+            max-width: 420px;
+            animation: modalSpring 0.32s var(--spring-easing) both;
+        }
+        .modal h2 {
+            margin-bottom: 8px;
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: -0.015em;
+            color: #ffffff;
+        }
+        .modal p {
+            color: var(--text-muted);
+            font-size: 0.88rem;
+            margin-bottom: 16px;
+        }
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 10px;
+            margin-top: 22px;
+        }
+
+        @media (max-width: 600px) {
+            .setup-screen { padding: 18px; }
+            .setup-header { flex-direction: column; align-items: stretch; }
+            .header-actions { justify-content: flex-end; }
+            .form-row { grid-template-columns: 1fr; gap: 12px; }
+            .form-actions { flex-direction: column-reverse; }
+            .form-actions .btn { width: 100%; }
+            .control-bar { justify-content: center; padding: 8px 12px; }
+            .stats-bar { padding: 10px 16px; gap: 14px; }
+            .story-log { padding: 16px; }
+            .message-card { max-width: 94%; }
+            .input-area { padding: 12px 14px 16px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    
+    <div id="setupScreen" class="setup-screen">
+        <div class="setup-header">
+            <div>
+                <h1 id="uiSetupTitle">Create Your Adventure</h1>
+                <p id="uiSetupSubtitle">Load a save, or fill in the details below to start anew!</p>
+            </div>
+            <div class="header-actions">
+                <button id="setupKeyBtn" class="btn-small">⚡ Model</button>
+                <button id="setupLangBtn" class="btn-small">🇬🇧 EN</button>
+            </div>
+        </div>
+
+        <form id="setupForm">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Player Name <span class="opt-badge" data-i18n="optBadge">Auto-generates if blank</span></label>
+                    <input type="text" id="playerNameInput" placeholder="e.g., Alex, Sarah...">
+                </div>
+                <div class="form-group">
+                    <label>Heroine Name <span class="opt-badge" data-i18n="optBadge">Auto-generates if blank</span></label>
+                    <input type="text" id="heroineNameInput" placeholder="e.g., Chloe, Elena...">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Your Personality & Looks <span class="opt-badge" data-i18n="optBadge">Auto-generates if blank</span></label>
+                    <input type="text" id="playerDescInput" placeholder="e.g., Sarcastic, tall, ambitious...">
+                </div>
+                <div class="form-group">
+                    <label>Heroine Personality & Looks <span class="opt-badge" data-i18n="optBadge">Auto-generates if blank</span></label>
+                    <input type="text" id="heroineDescInput" placeholder="e.g., Shy, artistic, quick-witted...">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Romance Tropes <span class="opt-badge" data-i18n="optBadge">Auto-generates if blank</span></label>
+                    <input type="text" id="romanceTypeInput" placeholder="e.g., Enemies to lovers, Fake dating...">
+                </div>
+                <div class="form-group">
+                    <label>Starting Scenario <span class="opt-badge" data-i18n="optBadge">Auto-generates if blank</span></label>
+                    <input type="text" id="scenarioInput" placeholder="e.g., Stuck in an elevator together...">
+                </div>
+            </div>
+            
+            <label class="nsfw-toggle">
+                <input type="checkbox" id="nsfwToggle">
+                Allow NSFW & Mature Content (Explicit themes & language permitted if natural)
+            </label>
+
+            <div class="form-actions">
+                <button type="button" id="surpriseBtn" class="btn secondary">🎲 Surprise Me</button>
+                <button type="submit" id="startBtn" class="btn primary">Start Adventure</button>
+            </div>
+        </form>
+
+        <div id="saveSlotsContainer" class="save-slots"></div>
+    </div>
+
+    <div id="gameScreen" class="game-screen hidden">
+        <header class="game-header">
+            <div class="game-info">
+                <h1 id="headerTitle">Adventure</h1>
+                <p id="headerSubtitle"></p>
+            </div>
+        </header>
+
+        <div class="control-bar">
+            <button id="apiKeyBtn" class="btn-small">⚡ Model</button>
+            <button id="customPromptBtn" class="btn-small">📝 Custom Prompt</button>
+            <button id="restartBtn" class="btn-small danger">Restart</button>
+            <button id="menuBtn" class="btn-small secondary">Menu</button>
+            <button id="gameLangBtn" class="btn-small">🇬🇧 EN</button>
+        </div>
+
+        <div class="stats-bar">
+            <div class="stat-item">
+                <div class="stat-header">
+                    <span id="stat1Label">Like</span>
+                    <span id="stat1Value">0</span>
+                </div>
+                <div class="stat-track"><div id="stat1Bar" class="stat-fill"></div></div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-header">
+                    <span id="stat2Label">Love</span>
+                    <span id="stat2Value">0</span>
+                </div>
+                <div class="stat-track"><div id="stat2Bar" class="stat-fill" style="background: var(--accent-silver-gradient);"></div></div>
+            </div>
+        </div>
+
+        <div id="storyLog" class="story-log"></div>
+
+        <div class="input-area">
+            <div class="input-controls">
+                <div>
+                    <button id="undoBtn" class="btn-small">↩ Undo</button>
+                    <button id="regenBtn" class="btn-small">↻ Regenerate</button>
+                </div>
+            </div>
+            <form id="actionForm" class="input-row">
+                <textarea id="userInput" placeholder="What do you do or say?"></textarea>
+                <button type="submit" id="sendBtn" class="btn primary send-btn">Act</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="keyModal" class="modal-overlay hidden">
+        <div class="modal">
+            <h2 id="uiKeyModalTitle">AI Model Settings</h2>
+            <p id="uiKeyModalDesc">Select your preferred model. Provide a Google AI Studio API key, or leave blank for automatic free routing.</p>
+            
+            <label id="lblModelSelect" style="font-size:0.85rem; font-weight:600;">Model</label>
+            <select id="modelSelect" style="margin-top:5px; margin-bottom:15px;">
+                <option value="gemini-3.8-flash">Gemini 3.8 Flash</option>
+                <option value="gemini-3.5-flash-lite">Gemini 3.5 Flash-Lite</option>
+            </select>
+
+            <label id="lblApiKey" style="font-size:0.85rem; font-weight:600;">API Key (Google)</label>
+            <input type="text" id="apiKeyInput" style="margin-top:5px;" placeholder="AIzaSy...">
+            <div id="keyStatusMsg" style="font-size: 0.8rem; margin-top: 8px; color: var(--accent-silver);"></div>
+            
+            <div class="modal-actions">
+                <button id="clearKeyModalBtn" class="btn-small danger">Clear Key</button>
+                <div style="flex:1;"></div>
+                <button id="closeKeyModalBtn" class="btn secondary">Close</button>
+                <button id="saveKeyModalBtn" class="btn primary">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="customPromptModal" class="modal-overlay hidden">
+        <div class="modal">
+            <h2 id="uiCustomPromptTitle">Custom AI Rules</h2>
+            <p id="uiCustomPromptDesc">Add any specific instructions, tone guidelines, or mechanics. These persist globally.</p>
+            <textarea id="customPromptInput" placeholder="e.g., 'Make the dialogue witty...'"></textarea>
+            <div class="modal-actions">
+                <button id="closeCustomPromptBtn" class="btn secondary">Close</button>
+                <button id="saveCustomPromptBtn" class="btn primary">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="confirmModal" class="modal-overlay hidden">
+        <div class="modal">
+            <h2 id="confirmTitle">Confirm</h2>
+            <p id="confirmDesc">Are you sure?</p>
+            <div class="modal-actions">
+                <button id="confirmCancelBtn" class="btn secondary">Cancel</button>
+                <button id="confirmOkBtn" class="btn danger">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    const MAX_SAVES = 5;
+    const STORAGE_KEY_API = "gemini_adventure_api_key_v5";
+    const STORAGE_KEY_MODEL = "gemini_adventure_model_v5";
+    const STORAGE_KEY_LANG = "gemini_adventure_lang_v2";
+    const STORAGE_KEY_PROMPT = "gemini_adventure_custom_prompt_v2";
+    const LOCAL_SAVES_KEY = "ai_adventure_saves_list_v1";
+
+    const I18N = {
+        en: {
+            langBtn: "🇬🇧 EN", setupTitle: "Create Your Adventure", setupSubtitle: "Load a save, or fill in the details below to start anew!",
+            optBadge: "Auto-generates if blank", surpriseBtn: "🎲 Surprise Me", startBtn: "Start Adventure", restartBtn: "Restart",
+            menuBtn: "Menu", undoBtn: "↩ Undo", regenBtn: "↻ Regenerate", phUserInput: "What do you do or say?", sendBtn: "Act",
+            youLabel: "YOU", storyLabel: "STORY", errorLabel: "ERROR", generatingScene: "*Generating scene...*",
+            defaultTraveler: "Traveler", defaultGenre: "Romance", adventureSuffix: " — Story", stat1Default: "Like", stat2Default: "Love",
+            keyModalTitle: "AI Model Settings", keyModalDesc: "Select your preferred model. Provide a Google AI Studio API key, or leave blank for automatic free routing.",
+            lblModelSelect: "Model", lblApiKey: "API Key (Google)", phApiKey: "AIzaSy...",
+            clearKeyBtn: "Clear Key", closeBtn: "Close", saveKeyBtn: "Save", cancelBtn: "Cancel", confirmBtn: "Confirm",
+            restartTitle: "Restart?", restartDesc: "Reset history and start over?", menuTitle: "Exit to Menu?", menuDesc: "Return to start screen?",
+            customKeyActive: "Custom API Key active", autoRoutingActive: "Automatic free routing active", clearedKeyMsg: "Cleared key.",
+            customPromptBtn: "📝 Custom Prompt", promptModalTitle: "Custom AI Rules", promptModalDesc: "Add any specific instructions.",
+            phCustomPrompt: "e.g., Make the dialogue witty...", savePromptBtn: "Save", loadBtn: "Load", deleteBtn: "Delete",
+            slotFullErr: "Save slots full! Delete a save first.", deleteSaveTitle: "Delete Save?", deleteSaveDesc: "Permanently remove this save?"
+        },
+        pl: {
+            langBtn: "🇵🇱 PL", setupTitle: "Stwórz Przygodę", setupSubtitle: "Wczytaj grę lub wypełnij szczegóły poniżej!",
+            optBadge: "Auto-generowane jeśli puste", surpriseBtn: "🎲 Zaskocz mnie", startBtn: "Rozpocznij Przygodę", restartBtn: "Restartuj",
+            menuBtn: "Menu", undoBtn: "↩ Cofnij", regenBtn: "↻ Ponów", phUserInput: "Co robisz lub mówisz?", sendBtn: "Działaj",
+            youLabel: "TY", storyLabel: "HISTORIA", errorLabel: "BŁĄD", generatingScene: "*Generowanie sceny...*",
+            defaultTraveler: "Wędrowiec", defaultGenre: "Romans", adventureSuffix: " — Historia", stat1Default: "Sympatia", stat2Default: "Miłość",
+            keyModalTitle: "Ustawienia Modelu AI", keyModalDesc: "Wybierz model. Podaj klucz Google, albo zostaw puste dla darmowego routingu.",
+            lblModelSelect: "Model", lblApiKey: "Klucz API (Google)", phApiKey: "AIzaSy...",
+            clearKeyBtn: "Wyczyść", closeBtn: "Zamknij", saveKeyBtn: "Zapisz", cancelBtn: "Anuluj", confirmBtn: "Potwierdź",
+            restartTitle: "Restartować?", restartDesc: "Zresetować historię?", menuTitle: "Wrócić do Menu?", menuDesc: "Wrócić na start?",
+            customKeyActive: "Własny klucz API aktywny", autoRoutingActive: "Automatyczny darmowy routing aktywny", clearedKeyMsg: "Wyczyszczono.",
+            customPromptBtn: "📝 Własne Zasady", promptModalTitle: "Własne Zasady AI", promptModalDesc: "Dodaj instrukcje.",
+            phCustomPrompt: "np. Zwolnij tempo akcji...", savePromptBtn: "Zapisz", loadBtn: "Wczytaj", deleteBtn: "Usuń",
+            slotFullErr: "Brak miejsc!", deleteSaveTitle: "Usunąć?", deleteSaveDesc: "Trwale usunąć zapis?"
+        }
+    };
+
+    function resolveApiKey() { return localStorage.getItem(STORAGE_KEY_API) || ""; }
+    function resolveModel() { 
+        const s = localStorage.getItem(STORAGE_KEY_MODEL); 
+        return (s === "gemini-3.5-flash-lite") ? s : "gemini-3.8-flash"; 
+    }
+    function resolveLang() { return localStorage.getItem(STORAGE_KEY_LANG) === "pl" ? "pl" : "en"; }
+    let currentApiKey = resolveApiKey(); let currentModel = resolveModel(); let currentLang = resolveLang();
+    function t(key) { return I18N[currentLang]?.[key] || I18N.en[key] || key; }
+
+    let saves = []; let currentSaveIndex = -1; let gameState = null;
+    let lastRenderedCount = 0;
+
+    const ui = {
+        setupScreen: document.getElementById("setupScreen"), gameScreen: document.getElementById("gameScreen"),
+        setupForm: document.getElementById("setupForm"), saveSlotsContainer: document.getElementById("saveSlotsContainer"),
+        surpriseBtn: document.getElementById("surpriseBtn"), startBtn: document.getElementById("startBtn"),
+        storyLog: document.getElementById("storyLog"), actionForm: document.getElementById("actionForm"), userInput: document.getElementById("userInput"),
+        sendBtn: document.getElementById("sendBtn"), undoBtn: document.getElementById("undoBtn"), regenBtn: document.getElementById("regenBtn")
+    };
+
+    function applyTranslations() {
+        currentLang = resolveLang(); document.documentElement.lang = currentLang;
+        document.getElementById("setupLangBtn").textContent = t("langBtn");
+        document.getElementById("gameLangBtn").textContent = t("langBtn");
+        document.getElementById("uiSetupTitle").textContent = t("setupTitle");
+        document.getElementById("uiSetupSubtitle").textContent = t("setupSubtitle");
+        document.querySelectorAll('[data-i18n="optBadge"]').forEach(el => el.textContent = t("optBadge"));
+        ui.surpriseBtn.textContent = t("surpriseBtn"); ui.startBtn.textContent = t("startBtn");
+        document.getElementById("restartBtn").textContent = t("restartBtn"); document.getElementById("menuBtn").textContent = t("menuBtn");
+        ui.undoBtn.textContent = t("undoBtn"); ui.regenBtn.textContent = t("regenBtn"); ui.userInput.placeholder = t("phUserInput"); ui.sendBtn.textContent = t("sendBtn");
+        document.getElementById("uiKeyModalTitle").textContent = t("keyModalTitle"); document.getElementById("uiKeyModalDesc").textContent = t("keyModalDesc");
+        document.getElementById("lblModelSelect").textContent = t("lblModelSelect"); document.getElementById("lblApiKey").textContent = t("lblApiKey");
+        document.getElementById("apiKeyInput").placeholder = t("phApiKey");
+        document.getElementById("clearKeyModalBtn").textContent = t("clearKeyBtn"); document.getElementById("closeKeyModalBtn").textContent = t("closeBtn");
+        document.getElementById("saveKeyModalBtn").textContent = t("saveKeyBtn");
+        document.getElementById("confirmCancelBtn").textContent = t("cancelBtn"); document.getElementById("confirmOkBtn").textContent = t("confirmBtn");
+        document.getElementById("customPromptBtn").textContent = t("customPromptBtn");
+        document.getElementById("uiCustomPromptTitle").textContent = t("promptModalTitle"); document.getElementById("uiCustomPromptDesc").textContent = t("promptModalDesc");
+        document.getElementById("customPromptInput").placeholder = t("phCustomPrompt");
+        document.getElementById("closeCustomPromptBtn").textContent = t("closeBtn"); document.getElementById("saveCustomPromptBtn").textContent = t("savePromptBtn");
+        renderSaveSlots();
+    }
+
+    function toggleLanguage() { localStorage.setItem(STORAGE_KEY_LANG, currentLang === "en" ? "pl" : "en"); applyTranslations(); updateUI(); }
+    document.getElementById("setupLangBtn").addEventListener("click", toggleLanguage); document.getElementById("gameLangBtn").addEventListener("click", toggleLanguage);
+
+    function updateBadgeUI() {
+        currentModel = resolveModel();
+        let shortName = "3.8 Flash";
+        if (currentModel === "gemini-3.5-flash-lite") shortName = "3.5 Flash-Lite";
+        document.getElementById("setupKeyBtn").textContent = `⚡ ${shortName}`;
+        document.getElementById("apiKeyBtn").textContent = `⚡ ${shortName}`;
+    }
+
+    function formatText(rawText) {
+        const escaped = String(rawText || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        return escaped.replace(/\*([\s\S]*?)\*/g, '<span class="action-text">$1</span>').replace(/\n/g, "<br>");
+    }
+
+    function updateUI() {
+        updateBadgeUI();
+        if (!gameState || !gameState.active) {
+            ui.setupScreen.classList.remove("hidden");
+            ui.gameScreen.classList.add("hidden");
+            lastRenderedCount = 0;
+            renderSaveSlots();
+            return;
+        }
+        ui.setupScreen.classList.add("hidden");
+        ui.gameScreen.classList.remove("hidden");
+        
+        document.getElementById("headerTitle").textContent = `${gameState.config?.playerName || t("defaultTraveler")}${t("adventureSuffix")}`;
+        document.getElementById("headerSubtitle").textContent = `${gameState.config?.romanceType || t("defaultGenre")} • ${gameState.config?.heroineName || ""}`;
+        
+        document.getElementById("stat1Label").textContent = t("stat1Default"); document.getElementById("stat2Label").textContent = t("stat2Default");
+        document.getElementById("stat1Value").textContent = gameState.stat1; document.getElementById("stat2Value").textContent = gameState.stat2;
+        document.getElementById("stat1Bar").style.width = `${gameState.stat1}%`; document.getElementById("stat2Bar").style.width = `${gameState.stat2}%`;
+        
+        const visible = gameState.history.filter(h => !h.hiddenPrompt);
+        ui.storyLog.innerHTML = "";
+        visible.forEach((item, idx) => {
+            const isNewest = idx >= lastRenderedCount;
+            const card = document.createElement("div");
+            card.className = `message-card ${item.role === "user" ? "msg-user" : "msg-ai"}${isNewest ? " msg-enter" : ""}`;
+            card.innerHTML = `<div class="msg-label"><span>${item.role === "user" ? t("youLabel") : t("storyLabel")}</span><span style="font-size:0.65rem; opacity:0.6;">${item.modelUsed ? item.modelUsed.replace('gemini-','') : ''}</span></div>
+                              <div>${formatText(item.text)}</div>`;
+            ui.storyLog.appendChild(card);
+        });
+        lastRenderedCount = visible.length;
+        ui.storyLog.scrollTop = ui.storyLog.scrollHeight;
+        ui.undoBtn.disabled = visible.length <= 1; ui.regenBtn.disabled = visible.length === 0;
+    }
+
+    function loadAllSaves() { try { saves = JSON.parse(localStorage.getItem(LOCAL_SAVES_KEY)) || []; } catch(e) { saves = []; } }
+    function writeAllSaves() { localStorage.setItem(LOCAL_SAVES_KEY, JSON.stringify(saves)); }
+    function saveActiveGame() {
+        if (currentSaveIndex >= 0 && currentSaveIndex < saves.length) saves[currentSaveIndex] = gameState;
+        else {
+            if (saves.length >= MAX_SAVES) saves.shift();
+            saves.push(gameState);
+            currentSaveIndex = saves.length - 1;
+        }
+        writeAllSaves();
+    }
+
+    function renderSaveSlots() {
+        ui.saveSlotsContainer.innerHTML = "";
+        saves.forEach((save, i) => {
+            const slot = document.createElement("div");
+            slot.className = "save-slot";
+            slot.style.animationDelay = `${0.28 + i * 0.05}s`;
+            slot.innerHTML = `<div class="save-slot-info"><span class="save-slot-title">${save.config?.playerName||t("defaultTraveler")}</span>
+                              <span class="save-slot-desc">${save.config?.romanceType||t("defaultGenre")} • ${save.history.length} turns</span></div>
+                              <div class="save-slot-actions">
+                                <button class="btn-small" onclick="currentSaveIndex=${i}; gameState=saves[${i}]; lastRenderedCount=0; updateUI();">${t("loadBtn")}</button>
+                                <button class="btn-small danger" onclick="openConfirm(t('deleteSaveTitle'), t('deleteSaveDesc'), () => {saves.splice(${i},1); writeAllSaves(); renderSaveSlots();})">${t("deleteBtn")}</button>
+                              </div>`;
+            ui.saveSlotsContainer.appendChild(slot);
+        });
+    }
+
+    function buildSystemPrompt() {
+        const c = gameState.config || {}; const isPL = currentLang === "pl";
+        const nsfw = gameState.nsfw ? "\n[NSFW DIRECTIVE: Explicit adult language, profanity, and mature themes PERMITTED. Let narrative escalate naturally.]" : "\n[NSFW DIRECTIVE: OFF. Keep language clean (PG-13) and fade-to-black.]";
+        const turnRule = gameState.history.length <= 1 ? "Write a 2-3 paragraph opening. IT MUST END WITH THE HEROINE SPEAKING DIRECTLY TO THE PLAYER." : "Keep response extremely brief (1-2 short paragraphs). Avoid heavy descriptions. React and hand agency back.";
+        const base = `You are a Game Master running a grounded, contemporary romance roleplay. NO magic, NO sci-fi.
+${isPL ? "Pisz CAŁĄ narrację po polsku." : "Write in English."}
+${nsfw}
+
+[CANON DETAILS - AI MUST INVENT BLANKS]:
+- Player: ${c.playerName||"[AI TO INVENT]"} (${c.playerDesc||"[AI TO INVENT]"})
+- Heroine: ${c.heroineName||"[AI TO INVENT]"} (${c.heroineDesc||"[AI TO INVENT]"})
+- Romance Tropes: ${c.romanceType||"[AI TO INVENT]"}
+- Scenario: ${c.scenario||"[AI TO INVENT]"}
+
+[CURRENT RELATIONSHIP DYNAMICS - CRITICAL DIRECTIVE]
+- Like (Friendship): ${gameState.stat1}/100
+- Love (Attraction): ${gameState.stat2}/100
+Characters MUST act strictly according to these stats. If low, keep it distant/professional. If high, show affection.
+
+Gameplay Rules:
+1. Write in second person. ${turnRule}
+2. [CRITICAL FORMATTING]: Wrap EVERY SINGLE NON-DIALOGUE sentence (actions, descriptions, thoughts) in single asterisks like *this*. Spoken dialogue MUST be plain text with quotes like "this", no asterisks around it.
+3. End every turn so the player can act.
+4. On the VERY FIRST turn, output a stat1Delta and stat2Delta to set the initial absolute values (0-100) based on the starting scenario.
+5. At the VERY END of EVERY response, append this hidden block:
+||STATS:{"stat1Delta": 0, "stat2Delta": 0, "playerName": "${c.playerName||""}", "heroineName": "${c.heroineName||""}", "playerDesc": "${c.playerDesc||""}", "heroineDesc": "${c.heroineDesc||""}", "romanceType": "${c.romanceType||""}", "scenario": "${c.scenario||""}"}||`;
+        const custom = localStorage.getItem(STORAGE_KEY_PROMPT) || "";
+        return custom ? `${base}\n\n[CRITICAL CUSTOM RULES]:\n${custom}` : base;
+    }
+
+    function cleanAIResponse(raw) { return String(raw).replace(/<think>[\s\S]*?<\/think>/gi, "").trim(); }
+
+    async function callDirectGoogleGemini(prompt, contents, key) {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${encodeURIComponent(key)}`;
+        const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ systemInstruction: { parts: [{ text: prompt }] }, contents, generationConfig: { maxOutputTokens: 250 } }) });
+        if (!res.ok) throw new Error(`API Error ${res.status}`);
+        return cleanAIResponse((await res.json())?.candidates?.[0]?.content?.parts?.[0]?.text);
+    }
+    
+    async function callKeylessPublicCascade(prompt, contents) {
+        const msgs = [{ role: "system", content: prompt }, ...contents.map(c => ({ role: c.role==="model"?"assistant":"user", content: c.parts[0].text }))];
+        let attempts = 0;
+        while (attempts < 3) {
+            try {
+                const res = await fetch("https://text.pollinations.ai/openai", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ model: "openai", messages: msgs, seed: Math.floor(Math.random() * 1000000) })
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data?.choices?.[0]?.message?.content) {
+                        return cleanAIResponse(data.choices[0].message.content);
+                    }
+                }
+            } catch (e) {
+                console.warn("Free API attempt " + (attempts + 1) + " failed", e);
+            }
+            attempts++;
+            if (attempts < 3) await new Promise(r => setTimeout(r, 1000));
+        }
+        throw new Error(currentLang === "pl" ? 
+            "Darmowe publiczne serwery są obecnie przeciążone. Uzyskaj darmowy klucz API na aistudio.google.com i dodaj go w Ustawieniach Modelu (⚡) dla natychmiastowego, niezawodnego dostępu." : 
+            "Free public servers are currently overloaded. Please get a free API key at aistudio.google.com and add it in the Model Settings (⚡) for instant, reliable access.");
+    }
+
+    async function callGeminiAPI(contents) {
+        currentModel = resolveModel(); currentApiKey = resolveApiKey();
+        const truncated = contents.slice(-15);
+        
+        if (currentApiKey) {
+            try {
+                return await callDirectGoogleGemini(buildSystemPrompt(), truncated, currentApiKey);
+            } catch(e) { console.warn(e); }
+        }
+        return await callKeylessPublicCascade(buildSystemPrompt(), truncated);
+    }
+
+    function parseStats(raw) {
+        let clean = raw;
+        const match = raw.match(/\|\|STATS:(\{[\s\S]*?\})\|\|/);
+        if (match) {
+            clean = raw.replace(match[0], "").trim();
+            try {
+                const s = JSON.parse(match[1]);
+                if (gameState.config) {
+                    ["playerName","playerDesc","heroineName","heroineDesc","romanceType","scenario"].forEach(k => {
+                        if (!gameState.config[k] && s[k]) gameState.config[k] = s[k];
+                    });
+                }
+                gameState.stat1 = Math.max(0, Math.min(100, gameState.stat1 + (Number(s.stat1Delta)||0)));
+                gameState.stat2 = Math.max(0, Math.min(100, gameState.stat2 + (Number(s.stat2Delta)||0)));
+            } catch(e){}
+        }
+        return clean;
+    }
+
+    async function generateTurn() {
+        ui.sendBtn.disabled = ui.userInput.disabled = ui.undoBtn.disabled = ui.regenBtn.disabled = true;
+        const load = document.createElement("div");
+        load.className = "message-card msg-ai loading-pulse";
+        load.innerHTML = `<div class="msg-label"><span>${t("storyLabel")}</span></div><div class="action-text">${t("generatingScene")}</div>`;
+        ui.storyLog.appendChild(load);
+        ui.storyLog.scrollTop = ui.storyLog.scrollHeight;
+        
+        try {
+            const reply = parseStats(await callGeminiAPI(gameState.history.map(h => ({ role: h.role, parts: [{ text: h.text }] }))));
+            gameState.history.push({ role: "model", text: reply, stat1: gameState.stat1, stat2: gameState.stat2, modelUsed: currentModel });
+            saveActiveGame();
+            updateUI();
+        } catch(e) {
+            load.classList.remove("loading-pulse");
+            load.innerHTML = `<div class="msg-label"><span>${t("errorLabel")}</span></div><div>${formatText(e.message)}</div>`;
+        } finally {
+            ui.sendBtn.disabled = ui.userInput.disabled = false; ui.userInput.focus();
+            const vis = gameState.history.filter(h => !h.hiddenPrompt);
+            ui.undoBtn.disabled = vis.length <= 1; ui.regenBtn.disabled = vis.length === 0;
+        }
+    }
+
+    async function startNewScenario(isRestart=false) {
+        lastRenderedCount = 0;
+        if (!isRestart) {
+            gameState = { active: true, stat1: 0, stat2: 0, history: [],
+                nsfw: document.getElementById("nsfwToggle").checked,
+                config: {
+                    playerName: document.getElementById("playerNameInput").value.trim(),
+                    playerDesc: document.getElementById("playerDescInput").value.trim(),
+                    heroineName: document.getElementById("heroineNameInput").value.trim(),
+                    heroineDesc: document.getElementById("heroineDescInput").value.trim(),
+                    romanceType: document.getElementById("romanceTypeInput").value.trim(),
+                    scenario: document.getElementById("scenarioInput").value.trim()
+                }
+            };
+        } else {
+            gameState = { active: true, stat1: 0, stat2: 0, history: [], nsfw: gameState.nsfw, config: gameState.config };
+        }
+        gameState.history.push({ role: "user", hiddenPrompt: true, stat1: 0, stat2: 0, text: currentLang==="pl" ? "Rozpocznij przygodę. Wygeneruj otwarcie i zainicjuj JSON stats." : "Start the adventure. Generate opening and init JSON stats." });
+        saveActiveGame(); updateUI(); await generateTurn();
+    }
+
+    ui.setupForm.addEventListener("submit", (e) => { e.preventDefault(); currentSaveIndex = saves.length; startNewScenario(); });
+    ui.surpriseBtn.addEventListener("click", () => { ui.setupForm.reset(); currentSaveIndex = saves.length; startNewScenario(); });
+    ui.actionForm.addEventListener("submit", async (e) => {
+        e.preventDefault(); const text = ui.userInput.value.trim(); if (!text) return;
+        ui.userInput.value = ""; gameState.history.push({ role: "user", text, stat1: gameState.stat1, stat2: gameState.stat2 });
+        saveActiveGame(); updateUI(); await generateTurn();
+    });
+
+    ui.undoBtn.addEventListener("click", () => {
+        if (gameState.history.length <= 2) return;
+        if (gameState.history[gameState.history.length-1].role === "model") gameState.history.pop();
+        if (gameState.history[gameState.history.length-1].role === "user") gameState.history.pop();
+        const last = gameState.history[gameState.history.length-1]; if(last) { gameState.stat1 = last.stat1||0; gameState.stat2 = last.stat2||0; }
+        lastRenderedCount = gameState.history.filter(h => !h.hiddenPrompt).length;
+        saveActiveGame(); updateUI();
+    });
+    ui.regenBtn.addEventListener("click", async () => {
+        if (gameState.history.length === 0) return;
+        if (gameState.history[gameState.history.length-1].role === "model") gameState.history.pop();
+        lastRenderedCount = gameState.history.filter(h => !h.hiddenPrompt).length;
+        saveActiveGame(); updateUI(); await generateTurn();
+    });
+
+    const confirmModal = document.getElementById("confirmModal"); let pendingAction = null;
+    function openConfirm(t, d, cb) { document.getElementById("confirmTitle").textContent = t; document.getElementById("confirmDesc").textContent = d; pendingAction = cb; confirmModal.classList.remove("hidden"); }
+    document.getElementById("confirmCancelBtn").addEventListener("click", () => confirmModal.classList.add("hidden"));
+    document.getElementById("confirmOkBtn").addEventListener("click", () => { confirmModal.classList.add("hidden"); if(pendingAction) pendingAction(); });
+
+    document.getElementById("restartBtn").addEventListener("click", () => openConfirm(t("restartTitle"), t("restartDesc"), () => startNewScenario(true)));
+    document.getElementById("menuBtn").addEventListener("click", () => openConfirm(t("menuTitle"), t("menuDesc"), () => { gameState = null; currentSaveIndex = -1; updateUI(); }));
+
+    const keyModal = document.getElementById("keyModal");
+    function openKeyModal() {
+        document.getElementById("apiKeyInput").value = resolveApiKey(); document.getElementById("modelSelect").value = resolveModel();
+        document.getElementById("keyStatusMsg").textContent = resolveApiKey() ? t("customKeyActive") : t("autoRoutingActive");
+        keyModal.classList.remove("hidden");
+    }
+    document.getElementById("setupKeyBtn").addEventListener("click", openKeyModal); document.getElementById("apiKeyBtn").addEventListener("click", openKeyModal);
+    document.getElementById("closeKeyModalBtn").addEventListener("click", () => keyModal.classList.add("hidden"));
+    document.getElementById("clearKeyModalBtn").addEventListener("click", () => { localStorage.removeItem(STORAGE_KEY_API); document.getElementById("apiKeyInput").value = ""; document.getElementById("keyStatusMsg").textContent = t("clearedKeyMsg"); updateBadgeUI(); });
+    document.getElementById("saveKeyModalBtn").addEventListener("click", () => {
+        localStorage.setItem(STORAGE_KEY_MODEL, document.getElementById("modelSelect").value);
+        const val = document.getElementById("apiKeyInput").value.trim();
+        if (val) localStorage.setItem(STORAGE_KEY_API, val); else localStorage.removeItem(STORAGE_KEY_API);
+        updateBadgeUI(); keyModal.classList.add("hidden");
+    });
+
+    const promptModal = document.getElementById("customPromptModal");
+    document.getElementById("customPromptBtn").addEventListener("click", () => { document.getElementById("customPromptInput").value = localStorage.getItem(STORAGE_KEY_PROMPT) || ""; promptModal.classList.remove("hidden"); });
+    document.getElementById("closeCustomPromptBtn").addEventListener("click", () => promptModal.classList.add("hidden"));
+    document.getElementById("saveCustomPromptBtn").addEventListener("click", () => { localStorage.setItem(STORAGE_KEY_PROMPT, document.getElementById("customPromptInput").value.trim()); promptModal.classList.add("hidden"); });
+
+    loadAllSaves(); applyTranslations(); updateUI();
+</script>
+</body>
+</html>
