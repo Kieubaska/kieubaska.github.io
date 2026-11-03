@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AI Romance Adventure</title>
+    <link rel="preconnect" href="https://generativelanguage.googleapis.com">
+    <link rel="preconnect" href="https://text.pollinations.ai">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <style>
+        :root {
+            --bg-color: #000000;
+            --panel-bg: rgba(15, 15, 15, 0.65);
+            --text-main: #ffffff;
+            --text-muted: #a0a0a0;
+            --accent-primary: #ffffff;
+            --accent-hover: #cccccc;
+            --accent-secondary: rgba(40, 40, 40, 0.6);
+            --accent-danger: #d32f2f;
+            --border-color: rgba(255, 255, 255, 0.15);
+            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: var(--bg-color); color: var(--text-main); line-height: 1.5; display: flex; justify-content: center; height: 100vh; overflow: hidden; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.4); }
+        .container { width: 100%; max-width: 800px; height: 100%; display: flex; flex-direction: column; background-color: var(--bg-color); border-left: 1px solid var(--border-color); border-right: 1px solid var(--border-color); position: relative; }
+        .hidden { display: none !important; }
+        @keyframes springUp { 0% { opacity: 0; transform: translateY(20px); } 100% { opacity: 1; transform: translateY(0); } }
+        @keyframes pulseGlow { 0% { opacity: 0.6; } 50% { opacity: 1; text-shadow: 0 0 8px rgba(255,255,255,0.5); } 100% { opacity: 0.6; } }
+        .msg-enter { animation: springUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        .btn { padding: 10px 16px; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1); backdrop-filter: blur(10px); }
+        .btn:active { transform: scale(0.96); }
+        .btn.primary { background-color: var(--accent-primary); color: #000; }
+        .btn.primary:hover { background-color: var(--accent-hover); box-shadow: 0 0 15px rgba(255,255,255,0.2); }
+        .btn.secondary { background-color: var(--accent-secondary); color: var(--text-main); border: 1px solid var(--border-color); }
+        .btn.secondary:hover { background-color: rgba(60, 60, 60, 0.8); }
+        .btn.danger { background-color: rgba(211, 47, 47, 0.2); color: #ff5252; border: 1px solid rgba(211, 47, 47, 0.5); }
+        .btn-small { padding: 6px 12px; font-size: 0.85rem; border: 1px solid var(--border-color); border-radius: 6px; background-color: var(--accent-secondary); color: var(--text-main); cursor: pointer; backdrop-filter: blur(8px); transition: all 0.2s; }
+        .btn-small:hover { background-color: rgba(80, 80, 80, 0.6); }
+        .btn-small:active { transform: scale(0.94); }
+        .btn-small.danger { background-color: rgba(211, 47, 47, 0.15); color: #ff5252; border-color: rgba(211, 47, 47, 0.4); }
+        .setup-screen { padding: 20px; overflow-y: auto; height: 100%; animation: springUp 0.5s ease-out; }
+        .setup-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
+        .setup-header h1 { font-size: 1.8rem; color: var(--accent-primary); letter-spacing: -0.5px; }
+        .setup-header p { color: var(--text-muted); font-size: 0.9rem; }
+        .header-actions { display: flex; gap: 8px; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-group label { font-size: 0.9rem; font-weight: 600; color: var(--text-main); }
+        .opt-badge { font-size: 0.7rem; font-weight: normal; color: var(--text-muted); background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px; margin-left: 6px; }
+        input[type="text"], textarea, select { width: 100%; padding: 12px; border-radius: 8px; background-color: rgba(0, 0, 0, 0.5); color: var(--text-main); border: 1px solid var(--border-color); font-family: inherit; backdrop-filter: blur(12px); transition: all 0.3s; }
+        input:focus, textarea:focus, select:focus { outline: none; border-color: rgba(255,255,255,0.5); background-color: rgba(20, 20, 20, 0.8); box-shadow: 0 0 0 2px rgba(255,255,255,0.1); }
+        select option { background-color: #000000; color: #ffffff; }
+        textarea { resize: vertical; min-height: 80px; }
+        .nsfw-card { background-color: var(--panel-bg); border: 1px solid var(--border-color); padding: 14px 18px; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; backdrop-filter: blur(12px); box-shadow: var(--glass-shadow); }
+        .nsfw-info { display: flex; flex-direction: column; gap: 2px; }
+        .nsfw-title { font-size: 0.9rem; font-weight: 600; color: var(--text-main); }
+        .nsfw-desc { font-size: 0.75rem; color: var(--text-muted); }
+        .switch { position: relative; display: inline-block; width: 50px; height: 28px; flex-shrink: 0; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(255, 255, 255, 0.15); transition: cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.3s; border-radius: 28px; border: 1px solid var(--border-color); }
+        .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px; background-color: #ffffff; transition: cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.3s; border-radius: 50%; box-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+        input:checked + .slider { background-color: #ffffff; border-color: #ffffff; }
+        input:checked + .slider:before { transform: translateX(22px); background-color: #000000; }
+        .form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; padding-bottom: 20px; border-bottom: 1px solid var(--border-color); }
+        .save-slots { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
+        .save-slot { background-color: var(--panel-bg); border: 1px solid var(--border-color); padding: 12px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; backdrop-filter: blur(16px); box-shadow: var(--glass-shadow); border-top: 1px solid rgba(255,255,255,0.2); }
+        .save-slot-info { display: flex; flex-direction: column; }
+        .save-slot-title { font-weight: 600; color: var(--accent-primary); }
+        .save-slot-desc { font-size: 0.8rem; color: var(--text-muted); }
+        .save-slot-actions { display: flex; gap: 8px; }
+        .game-screen { display: flex; flex-direction: column; height: 100%; animation: springUp 0.4s ease-out; }
+        .game-header { padding: 15px 20px; background-color: var(--panel-bg); border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; backdrop-filter: blur(20px); border-top: 1px solid rgba(255,255,255,0.1); z-index: 10; }
+        .game-info h1 { font-size: 1.2rem; color: var(--accent-primary); margin-bottom: 2px; }
+        .game-info p { font-size: 0.8rem; color: var(--text-muted); }
+        .control-bar { display: flex; gap: 8px; padding: 10px 20px; background-color: rgba(0,0,0,0.8); border-bottom: 1px solid var(--border-color); flex-wrap: wrap; justify-content: flex-end; }
+        .stats-bar { display: flex; gap: 20px; padding: 12px 20px; background-color: rgba(10,10,10,0.9); border-bottom: 1px solid var(--border-color); }
+        .stat-item { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+        .stat-header { display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: 600; color: var(--text-muted); }
+        .stat-track { height: 6px; background-color: rgba(255,255,255,0.1); border-radius: 3px; overflow: hidden; position: relative; }
+        .stat-fill { height: 100%; background-color: #ffffff; transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1); box-shadow: inset 0 0 4px rgba(0,0,0,0.3); }
+        .story-log { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; scroll-behavior: smooth; }
+        .message-card { padding: 14px 18px; border-radius: 12px; max-width: 90%; backdrop-filter: blur(12px); box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .msg-ai { background-color: var(--panel-bg); border-left: 2px solid rgba(255,255,255,0.5); align-self: flex-start; border-top: 1px solid rgba(255,255,255,0.1); }
+        .msg-user { background-color: rgba(30, 30, 30, 0.6); border-right: 2px solid rgba(255,255,255,0.2); align-self: flex-end; border-top: 1px solid rgba(255,255,255,0.05); }
+        .msg-label { font-size: 0.75rem; font-weight: 700; margin-bottom: 8px; display: flex; justify-content: space-between; color: var(--text-muted); letter-spacing: 0.5px; }
+        .action-text { color: #b3b3b3; font-style: italic; }
+        .generating-text { animation: pulseGlow 1.5s infinite; color: #ffffff; font-style: italic; }
+        .input-area { padding: 15px; background-color: var(--panel-bg); border-top: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 10px; backdrop-filter: blur(20px); }
+        .input-controls { display: flex; justify-content: space-between; }
+        .input-row { display: flex; gap: 10px; }
+        .input-row textarea { flex: 1; min-height: 50px; height: 50px; resize: none; border-radius: 25px; padding: 12px 20px; background: rgba(0,0,0,0.6); }
+        .send-btn { border-radius: 25px; padding: 0 24px; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; z-index: 100; backdrop-filter: blur(8px); }
+        .modal { background-color: rgba(15, 15, 15, 0.8); border: 1px solid rgba(255,255,255,0.15); padding: 24px; border-radius: 16px; width: 90%; max-width: 420px; backdrop-filter: blur(32px); box-shadow: var(--glass-shadow); border-top: 1px solid rgba(255,255,255,0.3); animation: springUp 0.3s ease-out; }
+        .modal h2 { margin-bottom: 10px; font-size: 1.2rem; letter-spacing: -0.5px; }
+        .modal p { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 15px; }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+        @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div id="setupScreen" class="setup-screen">
+        <div class="setup-header">
+            <div><h1>Create Your Adventure</h1><p>Load a save, or fill in the details below to start anew!</p></div>
+            <div class="header-actions"><button id="setupKeyBtn" class="btn-small">⚡ Model</button></div>
+        </div>
+        <form id="setupForm">
+            <div class="form-row">
+                <div class="form-group"><label>Player Name <span class="opt-badge">Auto-generates if blank</span></label><input type="text" id="playerNameInput" placeholder="e.g., Alex, Sarah..."></div>
+                <div class="form-group"><label>Heroine Name <span class="opt-badge">Auto-generates if blank</span></label><input type="text" id="heroineNameInput" placeholder="e.g., Chloe, Elena..."></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>Your Personality & Looks <span class="opt-badge">Auto-generates if blank</span></label><input type="text" id="playerDescInput" placeholder="e.g., Sarcastic, tall, ambitious..."></div>
+                <div class="form-group"><label>Heroine Personality & Looks <span class="opt-badge">Auto-generates if blank</span></label><input type="text" id="heroineDescInput" placeholder="e.g., Shy, artistic, quick-witted..."></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>Romance Tropes <span class="opt-badge">Auto-generates if blank</span></label><input type="text" id="romanceTypeInput" placeholder="e.g., Enemies to lovers, Fake dating..."></div>
+                <div class="form-group"><label>Starting Scenario <span class="opt-badge">Auto-generates if blank</span></label><input type="text" id="scenarioInput" placeholder="e.g., Stuck in an elevator together..."></div>
+            </div>
+            <div class="nsfw-card">
+                <div class="nsfw-info"><span class="nsfw-title">NSFW & Mature Content</span><span class="nsfw-desc">Allow explicit themes, profanity, and natural escalation.</span></div>
+                <label class="switch"><input type="checkbox" id="nsfwToggle"><span class="slider"></span></label>
+            </div>
+            <div class="form-actions"><button type="button" id="surpriseBtn" class="btn secondary">🎲 Surprise Me</button><button type="submit" id="startBtn" class="btn primary">Start Adventure</button></div>
+        </form>
+        <div id="saveSlotsContainer" class="save-slots"></div>
+    </div>
+    <div id="gameScreen" class="game-screen hidden">
+        <header class="game-header"><div class="game-info"><h1 id="headerTitle">Adventure</h1><p id="headerSubtitle"></p></div></header>
+        <div class="control-bar"><button id="apiKeyBtn" class="btn-small">⚡ Model</button><button id="customPromptBtn" class="btn-small">📝 Custom Prompt</button><button id="restartBtn" class="btn-small danger">Restart</button><button id="menuBtn" class="btn-small secondary">Menu</button></div>
+        <div class="stats-bar">
+            <div class="stat-item"><div class="stat-header"><span>Like</span><span id="stat1Value">0</span></div><div class="stat-track"><div id="stat1Bar" class="stat-fill"></div></div></div>
+            <div class="stat-item"><div class="stat-header"><span>Love</span><span id="stat2Value">0</span></div><div class="stat-track"><div id="stat2Bar" class="stat-fill" style="background-color: rgba(255,255,255,0.6);"></div></div></div>
+        </div>
+        <div id="storyLog" class="story-log"></div>
+        <div class="input-area">
+            <div class="input-controls"><div><button id="undoBtn" class="btn-small">↩ Undo</button><button id="regenBtn" class="btn-small">↻ Regenerate</button></div></div>
+            <form id="actionForm" class="input-row"><textarea id="userInput" placeholder="What do you do or say?"></textarea><button type="submit" id="sendBtn" class="btn primary send-btn">Act</button></form>
+        </div>
+    </div>
+    <div id="keyModal" class="modal-overlay hidden">
+        <div class="modal">
+            <h2>AI Model & Cloud Sync</h2><p>Select your model settings, configure your Google API key, or sign into Google Drive to sync your progress cross-platform.</p>
+            <label style="font-size:0.85rem; font-weight:600; color: #fff;">Model</label>
+            <select id="modelSelect" style="margin-top:5px; margin-bottom:15px;"><option value="gemini-3.8-flash">Gemini 3.8 Flash</option><option value="gemini-3.5-flash-lite">Gemini 3.5 Flash-Lite (Fastest)</option></select>
+            <label style="font-size:0.85rem; font-weight:600; color: #fff;">Google API Key (Optional)</label>
+            <input type="text" id="apiKeyInput" style="margin-top:5px; margin-bottom:15px;" placeholder="AIzaSy...">
+            <div style="border-top: 1px solid var(--border-color); padding-top: 12px; margin-bottom: 10px;">
+                <label style="font-size:0.85rem; font-weight:600; color: #fff; display:block; margin-bottom:6px;">Google Drive Account Sync</label>
+                <div id="cloudAccountStatus" style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 10px;">Not signed in</div>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;"><button id="googleSignInBtn" class="btn-small primary">Sign In / Switch Account</button><button id="cloudSyncBtn" class="btn-small hidden">☁️ Push Saves</button><button id="cloudLoadBtn" class="btn-small hidden">📥 Pull Saves</button><button id="googleSignOutBtn" class="btn-small danger hidden">Sign Out</button></div>
+            </div>
+            <div class="modal-actions" style="margin-top: 15px;"><button id="closeKeyModalBtn" class="btn secondary">Close</button><button id="saveKeyModalBtn" class="btn primary">Save Settings</button></div>
+        </div>
+    </div>
+    <div id="customPromptModal" class="modal-overlay hidden">
+        <div class="modal">
+            <h2>Custom AI Rules</h2><p>Add specific instructions or mechanics. These persist globally.</p>
+            <textarea id="customPromptInput" placeholder="e.g., 'Make the dialogue witty...'"></textarea>
+            <div class="modal-actions"><button id="closeCustomPromptBtn" class="btn secondary">Close</button><button id="saveCustomPromptBtn" class="btn primary">Save</button></div>
+        </div>
+    </div>
+    <div id="confirmModal" class="modal-overlay hidden">
+        <div class="modal"><h2 id="confirmTitle">Confirm</h2><p id="confirmDesc">Are you sure?</p><div class="modal-actions"><button id="confirmCancelBtn" class="btn secondary">Cancel</button><button id="confirmOkBtn" class="btn danger">Confirm</button></div></div>
+    </div>
+</div>
+<script>
+    const STORAGE_KEY_API = "gemini_adventure_api_key_v5";
+    const STORAGE_KEY_MODEL = "gemini_adventure_model_v5";
+    const STORAGE_KEY_PROMPT = "gemini_adventure_custom_prompt_v2";
+    const LOCAL_SAVES_KEY = "ai_adventure_saves_list_v1";
+    
+    // ⬇️ REPLACE THIS LINE WITH YOUR ACTUAL CLIENT ID ⬇️
+    const GOOGLE_CLIENT_ID = "PASTE_YOUR_ACTUAL_CLIENT_ID_HERE.apps.googleusercontent.com"; 
+
+    function resolveApiKey() { return localStorage.getItem(STORAGE_KEY_API) || ""; }
+    function resolveModel() { 
+        const s = localStorage.getItem(STORAGE_KEY_MODEL); 
+        return (s === "gemini-3.5-flash-lite") ? s : "gemini-3.8-flash"; 
+    }
+    let currentApiKey = resolveApiKey(); 
+    let currentModel = resolveModel();
+    let saves = []; let currentSaveIndex = -1; let gameState = null;
+    let googleAccessToken = null; let userEmailAccount = null;
+
+    const ui = {
+        setupScreen: document.getElementById("setupScreen"), gameScreen: document.getElementById("gameScreen"),
+        setupForm: document.getElementById("setupForm"), saveSlotsContainer: document.getElementById("saveSlotsContainer"),
+        surpriseBtn: document.getElementById("surpriseBtn"), startBtn: document.getElementById("startBtn"),
+        storyLog: document.getElementById("storyLog"), actionForm: document.getElementById("actionForm"), userInput: document.getElementById("userInput"),
+        sendBtn: document.getElementById("sendBtn"), undoBtn: document.getElementById("undoBtn"), regenBtn: document.getElementById("regenBtn")
+    };
+
+    function updateBadgeUI() {
+        currentModel = resolveModel();
+        let shortName = "3.8 Flash";
+        if (currentModel === "gemini-3.5-flash-lite") shortName = "3.5 Flash-Lite";
+        document.getElementById("setupKeyBtn").textContent = `⚡ ${shortName}`;
+        document.getElementById("apiKeyBtn").textContent = `⚡ ${shortName}`;
+    }
+
+    function formatText(rawText) {
+        const escaped = String(rawText || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        return escaped.replace(/\*([\s\S]*?)\*/g, '<span class="action-text">$1</span>').replace(/\n/g, "<br>");
+    }
+
+    function updateUI(isNewTurn = false) {
+        updateBadgeUI();
+        if (!gameState || !gameState.active) {
+            ui.setupScreen.classList.remove("hidden"); ui.gameScreen.classList.add("hidden"); renderSaveSlots(); return;
+        }
+        ui.setupScreen.classList.add("hidden"); ui.gameScreen.classList.remove("hidden");
+        document.getElementById("headerTitle").textContent = `${gameState.config?.playerName || "Traveler"} — Story`;
+        document.getElementById("headerSubtitle").textContent = `${gameState.config?.romanceType || "Romance"} • ${gameState.config?.heroineName || ""}`;
+        document.getElementById("stat1Value").textContent = gameState.stat1; 
+        document.getElementById("stat2Value").textContent = gameState.stat2;
+        document.getElementById("stat1Bar").style.width = `${gameState.stat1}%`; 
+        document.getElementById("stat2Bar").style.width = `${gameState.stat2}%`;
+        ui.storyLog.innerHTML = "";
+        gameState.history.forEach((item, index) => {
+            if (item.hiddenPrompt) return;
+            const card = document.createElement("div"); 
+            card.className = `message-card ${item.role === "user" ? "msg-user" : "msg-ai"}`;
+            if (isNewTurn && index === gameState.history.length - 1) card.classList.add("msg-enter");
+            card.innerHTML = `<div class="msg-label"><span>${item.role === "user" ? "YOU" : "STORY"}</span><span style="font-size:0.65rem; opacity:0.6;">${item.modelUsed ? item.modelUsed.replace('gemini-','') : ''}</span></div>
+                              <div>${formatText(item.text)}</div>`;
+            ui.storyLog.appendChild(card);
+        });
+        ui.storyLog.scrollTop = ui.storyLog.scrollHeight;
+        const visible = gameState.history.filter(h => !h.hiddenPrompt);
+        ui.undoBtn.disabled = visible.length <= 1; ui.regenBtn.disabled = visible.length === 0;
+    }
+
+    function loadAllSaves() { try { saves = JSON.parse(localStorage.getItem(LOCAL_SAVES_KEY)) || []; } catch(e) { saves = []; } }
+    function writeAllSaves() { localStorage.setItem(LOCAL_SAVES_KEY, JSON.stringify(saves)); }
+    function saveActiveGame() {
+        if (currentSaveIndex >= 0 && currentSaveIndex < saves.length) saves[currentSaveIndex] = gameState;
+        else { saves.push(gameState); currentSaveIndex = saves.length - 1; }
+        writeAllSaves();
+    }
+
+    function renderSaveSlots() {
+        ui.saveSlotsContainer.innerHTML = "";
+        saves.forEach((save, i) => {
+            const slot = document.createElement("div"); slot.className = "save-slot";
+            slot.innerHTML = `<div class="save-slot-info"><span class="save-slot-title">${save.config?.playerName||"Traveler"}</span>
+                              <span class="save-slot-desc">${save.config?.romanceType||"Romance"} • ${save.history.length} turns</span></div>
+                              <div class="save-slot-actions">
+                                <button class="btn-small" onclick="currentSaveIndex=${i}; gameState=saves[${i}]; updateUI();">Load</button>
+                                <button class="btn-small danger" onclick="openConfirm('Delete Save?', 'Permanently remove this save?', () => {saves.splice(${i},1); writeAllSaves(); renderSaveSlots();})">Delete</button>
+                              </div>`;
+            ui.saveSlotsContainer.appendChild(slot);
+        });
+    }
+
+    function buildSystemPrompt() {
+        const c = gameState.config || {}; 
+        const nsfw = gameState.nsfw ? "\n[NSFW DIRECTIVE: Explicit adult language, profanity, and mature themes PERMITTED. Let narrative escalate naturally.]" : "\n[NSFW DIRECTIVE: OFF. Keep language clean (PG-13) and fade-to-black.]";
+        return `You are a Game Master running a grounded, contemporary romance roleplay. NO magic, NO sci-fi.
+Write in English.
+${nsfw}
+
+[CANON DETAILS - AI MUST INVENT BLANKS]:
+- Player: ${c.playerName||"[AI TO INVENT]"} (GENDER: MALE) (${c.playerDesc||"[AI TO INVENT]"})
+- Heroine: ${c.heroineName||"[AI TO INVENT]"} (GENDER: FEMALE) (${c.heroineDesc||"[AI TO INVENT]"})
+- Romance Tropes: ${c.romanceType||"[AI TO INVENT]"}
+- Scenario: ${c.scenario||"[AI TO INVENT]"}
+
+[CURRENT RELATIONSHIP DYNAMICS - CRITICAL DIRECTIVE]
+- Like (Friendship): ${gameState.stat1}/100
+- Love (Attraction): ${gameState.stat2}/100
+Characters MUST act strictly according to these stats. If low, keep it distant/professional. If high, show affection.
+
+[STORY ADHERENCE]: Strictly maintain the heroine's established personality, psychological profile, and core romance tropes throughout every development.
+
+Gameplay Rules:
+1. Write in second person. Write a rich, immersive 1-2 paragraphs, mimicing a real conversation. Describe facial expressions, tone, and environment vividly. Ensure your response is fully complete and never cut off mid-sentence. 
+2. [AGENCY RULE - CRITICAL]: NEVER speak for the Player (MALE). NEVER describe the Player's thoughts or actions. You ONLY control the Heroine (FEMALE) and the environment.
+3. [CRITICAL FORMATTING]: Wrap EVERY SINGLE NON-DIALOGUE sentence (actions, descriptions, thoughts) in single asterisks like *this*. Spoken dialogue MUST be plain text with quotes like "this", no asterisks around it.
+4. End every turn waiting for the player's reaction or reply.
+5. On the VERY FIRST turn, output a stat1Delta and stat2Delta to set initial absolute values (0-100) based on the starting scenario.
+6. At the VERY END of EVERY response, append this hidden block:
+||STATS:{"stat1Delta": 0, "stat2Delta": 0, "playerName": "${c.playerName||""}", "heroineName": "${c.heroineName||""}", "playerDesc": "${c.playerDesc||""}", "heroineDesc": "${c.heroineDesc||""}", "romanceType": "${c.romanceType||""}", "scenario": "${c.scenario||""}"}||`;
+    }
+
+    function cleanAIResponse(raw) { return String(raw).replace(/<think>[\s\S]*?<\/think>/gi, "").trim(); }
+
+    async function callDirectGoogleGemini(prompt, contents, key) {
+        const cleanContents = contents.map(c => ({ role: c.role, parts: [{ text: c.parts[0].text }] }));
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${encodeURIComponent(key)}`;
+        const res = await fetch(url, { 
+            method: "POST", 
+            headers: { "Content-Type": "application/json" }, 
+            body: JSON.stringify({ 
+                systemInstruction: { parts: [{ text: prompt }] }, 
+                contents: cleanContents, 
+                generationConfig: { maxOutputTokens: 800, temperature: 0.7 },
+                safetySettings: [
+                    { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+                    { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+                    { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+                    { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
+                ]
+            }) 
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(`Google API: ${data?.error?.message || res.statusText || "Unknown error"}`);
+        if (data?.candidates?.[0]?.finishReason === "SAFETY") {
+            throw new Error("Google API Safety Filter blocked this response. Try rephrasing or clicking Regenerate.");
+        }
+        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!text) throw new Error("Empty response received from the AI model.");
+        return cleanAIResponse(text);
+    }
+
+    async function callKeylessPublicCascade(prompt, contents) {
+        const msgs = [{ role: "system", content: prompt }, ...contents.map(c => ({ role: c.role==="model"?"assistant":"user", content: c.parts[0].text }))];
+        let attempts = 0;
+        while (attempts < 3) {
+            try {
+                const res = await fetch("https://text.pollinations.ai/openai", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ model: "openai", messages: msgs, seed: Math.floor(Math.random() * 1000000) })
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data?.choices?.[0]?.message?.content) return cleanAIResponse(data.choices[0].message.content);
+                }
+            } catch (e) { console.warn("Free API attempt failed", e); }
+            attempts++;
+            if (attempts < 3) await new Promise(r => setTimeout(r, 1000));
+        }
+        throw new Error("The free proxy servers are currently down or overloaded. Please use a personal API key for instant speeds.");
+    }
+
+    async function callGeminiAPI(contents) {
+        currentModel = resolveModel(); currentApiKey = resolveApiKey();
+        const truncated = contents.slice(-60); // Extended 60-turn memory limit
+        if (currentApiKey) return await callDirectGoogleGemini(buildSystemPrompt(), truncated, currentApiKey);
+        return await callKeylessPublicCascade(buildSystemPrompt(), truncated);
+    }
+
+    function parseStats(raw) {
+        let clean = raw;
+        const match = raw.match(/\|\|STATS:(\{[\s\S]*?\})\|\|/);
+        if (match) {
+            clean = raw.replace(match[0], "").trim();
+            try {
+                const s = JSON.parse(match[1]);
+                if (gameState.config) {
+                    ["playerName","playerDesc","heroineName","heroineDesc","romanceType","scenario"].forEach(k => {
+                        if (!gameState.config[k] && s[k]) gameState.config[k] = s[k];
+                    });
+                }
+                gameState.stat1 = Math.max(0, Math.min(100, gameState.stat1 + (Number(s.stat1Delta)||0)));
+                gameState.stat2 = Math.max(0, Math.min(100, gameState.stat2 + (Number(s.stat2Delta)||0)));
+            } catch(e){}
+        }
+        return clean;
+    }
+
+    async function generateTurn() {
+        ui.sendBtn.disabled = ui.userInput.disabled = ui.undoBtn.disabled = ui.regenBtn.disabled = true;
+        const load = document.createElement("div"); load.className = "message-card msg-ai msg-enter";
+        load.innerHTML = `<div class="msg-label"><span>STORY</span></div><div class="generating-text">Generating scene...</div>`;
+        ui.storyLog.appendChild(load); ui.storyLog.scrollTop = ui.storyLog.scrollHeight;
+        
+        try {
+            const reply = parseStats(await callGeminiAPI(gameState.history.map(h => ({ role: h.role, parts: [{ text: h.text }] }))));
+            gameState.history.push({ role: "model", text: reply, stat1: gameState.stat1, stat2: gameState.stat2, modelUsed: currentModel });
+            saveActiveGame(); updateUI(true);
+        } catch(e) {
+            load.innerHTML = `<div class="msg-label"><span>ERROR</span></div><div>${formatText(e.message)}</div>`;
+        } finally {
+            ui.sendBtn.disabled = ui.userInput.disabled = false; ui.userInput.focus();
+            const vis = gameState.history.filter(h => !h.hiddenPrompt);
+            ui.undoBtn.disabled = vis.length <= 1; ui.regenBtn.disabled = vis.length === 0;
+        }
+    }
+
+    async function startNewScenario(isRestart=false) {
+        if (!isRestart) {
+            gameState = { active: true, stat1: 0, stat2: 0, history: [],
+                nsfw: document.getElementById("nsfwToggle").checked,
+                config: {
+                    playerName: document.getElementById("playerNameInput").value.trim(),
+                    playerDesc: document.getElementById("playerDescInput").value.trim(),
+                    heroineName: document.getElementById("heroineNameInput").value.trim(),
+                    heroineDesc: document.getElementById("heroineDescInput").value.trim(),
+                    romanceType: document.getElementById("romanceTypeInput").value.trim(),
+                    scenario: document.getElementById("scenarioInput").value.trim()
+                }
+            };
+        } else {
+            gameState = { active: true, stat1: 0, stat2: 0, history: [], nsfw: gameState.nsfw, config: gameState.config };
+        }
+        gameState.history.push({ role: "user", hiddenPrompt: true, stat1: 0, stat2: 0, text: "Start the adventure. Generate opening and init JSON stats." });
+        saveActiveGame(); updateUI(); await generateTurn();
+    }
+
+    ui.setupForm.addEventListener("submit", (e) => { e.preventDefault(); currentSaveIndex = saves.length; startNewScenario(); });
+    ui.surpriseBtn.addEventListener("click", () => { ui.setupForm.reset(); currentSaveIndex = saves.length; startNewScenario(); });
+    ui.actionForm.addEventListener("submit", async (e) => {
+        e.preventDefault(); const text = ui.userInput.value.trim(); if (!text) return;
+        ui.userInput.value = ""; gameState.history.push({ role: "user", text, stat1: gameState.stat1, stat2: gameState.stat2 });
+        saveActiveGame(); updateUI(true); await generateTurn();
+    });
+
+    ui.undoBtn.addEventListener("click", () => {
+        if (gameState.history.length <= 2) return;
+        
+        if (gameState.history[gameState.history.length-1].role === "model") {
+            gameState.history.pop();
+        }
+        
+        if (gameState.history[gameState.history.length-1].role === "user") {
+            const poppedUserMessage = gameState.history.pop();
+            ui.userInput.value = poppedUserMessage.text;
+        }
+        
+        const last = gameState.history[gameState.history.length-1]; 
+        if(last) { 
+            gameState.stat1 = last.stat1||0; 
+            gameState.stat2 = last.stat2||0; 
+        }
+        
+        saveActiveGame(); 
+        updateUI();
+        ui.userInput.focus();
+    });
+
+    ui.regenBtn.addEventListener("click", async () => {
+        if (gameState.history.length === 0) return;
+        if (gameState.history[gameState.history.length-1].role === "model") gameState.history.pop();
+        saveActiveGame(); updateUI(); await generateTurn();
+    });
+
+    const confirmModal = document.getElementById("confirmModal"); let pendingAction = null;
+    function openConfirm(t, d, cb) { document.getElementById("confirmTitle").textContent = t; document.getElementById("confirmDesc").textContent = d; pendingAction = cb; confirmModal.classList.remove("hidden"); }
+    document.getElementById("confirmCancelBtn").addEventListener("click", () => confirmModal.classList.add("hidden"));
+    document.getElementById("confirmOkBtn").addEventListener("click", () => { confirmModal.classList.add("hidden"); if(pendingAction) pendingAction(); });
+
+    document.getElementById("restartBtn").addEventListener("click", () => openConfirm("Restart?", "Reset history and start over?", () => startNewScenario(true)));
+    document.getElementById("menuBtn").addEventListener("click", () => openConfirm("Exit to Menu?", "Return to start screen?", () => { gameState = null; currentSaveIndex = -1; updateUI(); }));
+
+    const keyModal = document.getElementById("keyModal");
+    function openKeyModal() {
+        document.getElementById("apiKeyInput").value = resolveApiKey(); 
+        document.getElementById("modelSelect").value = resolveModel();
+        updateCloudAccountUI();
+        keyModal.classList.remove("hidden");
+    }
+    document.getElementById("setupKeyBtn").addEventListener("click", openKeyModal); 
+    document.getElementById("apiKeyBtn").addEventListener("click", openKeyModal);
+    document.getElementById("closeKeyModalBtn").addEventListener("click", () => keyModal.classList.add("hidden"));
+    
+    document.getElementById("saveKeyModalBtn").addEventListener("click", () => {
+        localStorage.setItem(STORAGE_KEY_MODEL, document.getElementById("modelSelect").value);
+        const val = document.getElementById("apiKeyInput").value.trim();
+        if (val) localStorage.setItem(STORAGE_KEY_API, val); else localStorage.removeItem(STORAGE_KEY_API);
+        updateBadgeUI(); keyModal.classList.add("hidden");
+    });
+
+    function updateCloudAccountUI() {
+        const statusEl = document.getElementById("cloudAccountStatus");
+        const signInBtn = document.getElementById("googleSignInBtn");
+        const signOutBtn = document.getElementById("googleSignOutBtn");
+        const syncBtn = document.getElementById("cloudSyncBtn");
+        const loadBtn = document.getElementById("cloudLoadBtn");
+
+        if (userEmailAccount) {
+            statusEl.textContent = `Connected: ${userEmailAccount}`;
+            signInBtn.textContent = "Switch Google Account";
+            signOutBtn.classList.remove("hidden");
+            syncBtn.classList.remove("hidden");
+            loadBtn.classList.remove("hidden");
+        } else {
+            statusEl.textContent = "Not signed in";
+            signInBtn.textContent = "Sign In with Google";
+            signOutBtn.classList.add("hidden");
+            syncBtn.classList.add("hidden");
+            loadBtn.classList.add("hidden");
+        }
+    }
+
+    let tokenClient;
+    window.onload = function() {
+        loadAllSaves(); updateUI();
+        if (typeof google !== 'undefined') {
+            tokenClient = google.accounts.oauth2.initTokenClient({
+                client_id: GOOGLE_CLIENT_ID,
+                scope: 'https://www.googleapis.com/auth/drive.appdata email', 
+                callback: async (response) => {
+                    if (response.error) {
+                        alert("Google Sign-In Error: " + response.error);
+                        return;
+                    }
+                    googleAccessToken = response.access_token;
+                    try {
+                        const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                            headers: { Authorization: `Bearer ${googleAccessToken}` }
+                        });
+                        const data = await res.json();
+                        userEmailAccount = data.email;
+                        updateCloudAccountUI();
+                        alert(`Successfully signed in as ${userEmailAccount}`);
+                    } catch(err) {
+                        userEmailAccount = "Authenticated User";
+                        updateCloudAccountUI();
+                    }
+                },
+            });
+        }
+    };
+
+    document.getElementById("googleSignInBtn").addEventListener("click", () => {
+        if (!tokenClient || GOOGLE_CLIENT_ID.includes("PASTE_YOUR_ACTUAL")) {
+            alert("Please paste your Google Client ID into line 325 of the HTML file first.");
+            return;
+        }
+        tokenClient.requestAccessToken({ prompt: 'select_account' });
+    });
+
+    document.getElementById("googleSignOutBtn").addEventListener("click", () => {
+        if (googleAccessToken) {
+            google.accounts.oauth2.revoke(googleAccessToken, () => {
+                googleAccessToken = null;
+                userEmailAccount = null;
+                updateCloudAccountUI();
+                alert("Signed out successfully.");
+            });
+        }
+    });
+
+    async function findCloudFileId() {
+        const res = await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent("name='ai_adventure_cloud_saves.json' and 'appDataFolder' in parents and trashed=false")}`, {
+            headers: { Authorization: `Bearer ${googleAccessToken}` }
+        });
+        const data = await res.json();
+        return data.files && data.files.length > 0 ? data.files[0].id : null;
+    }
+
+    document.getElementById("cloudSyncBtn").addEventListener("click", async () => {
+        if (!googleAccessToken) { alert("Please sign in first."); return; }
+        try {
+            const fileContent = JSON.stringify(saves);
+            const fileId = await findCloudFileId();
+            const metadata = { name: 'ai_adventure_cloud_saves.json', parents: ['appDataFolder'] };
+            const form = new FormData();
+            form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+            form.append('file', new Blob([fileContent], { type: 'application/json' }));
+            let method = 'POST';
+            let url = 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart';
+            if (fileId) {
+                method = 'PATCH';
+                url = `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=multipart`;
+            }
+            const res = await fetch(url, { method: method, headers: { Authorization: `Bearer ${googleAccessToken}` }, body: form });
+            if (res.ok) alert("Saves successfully synced to your Google Drive account!");
+            else alert("Sync failed.");
+        } catch(err) { alert("Error syncing to cloud: " + err.message); }
+    });
+
+    document.getElementById("cloudLoadBtn").addEventListener("click", async () => {
+        if (!googleAccessToken) { alert("Please sign in first."); return; }
+        try {
+            const fileId = await findCloudFileId();
+            if (!fileId) { alert("No backup found in this Google account."); return; }
+            const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
+                headers: { Authorization: `Bearer ${googleAccessToken}` }
+            });
+            if (res.ok) {
+                const cloudSaves = await res.json();
+                if (Array.isArray(cloudSaves)) {
+                    saves = cloudSaves; writeAllSaves(); renderSaveSlots();
+                    alert("Saves pulled successfully from Google Drive!");
+                }
+            } else { alert("Failed to pull saves."); }
+        } catch(err) { alert("Error pulling from cloud: " + err.message); }
+    });
+
+    const promptModal = document.getElementById("customPromptModal");
+    document.getElementById("customPromptBtn").addEventListener("click", () => { document.getElementById("customPromptInput").value = localStorage.getItem(STORAGE_KEY_PROMPT) || ""; promptModal.classList.remove("hidden"); });
+    document.getElementById("closeCustomPromptBtn").addEventListener("click", () => promptModal.classList.add("hidden"));
+    document.getElementById("saveCustomPromptBtn").addEventListener("click", () => { localStorage.setItem(STORAGE_KEY_PROMPT, document.getElementById("customPromptInput").value.trim()); promptModal.classList.add("hidden"); });
+</script>
+</body>
+</html>
